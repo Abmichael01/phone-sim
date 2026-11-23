@@ -1,0 +1,58 @@
+import type { DeviceInput } from "@/schemas/device";
+
+/**
+ * Google Pixel, Nexus and Nest devices. Sizes are CSS viewport pixels in
+ * portrait. Devices whose screen is natively landscape (Nest Hub, the inner
+ * Pixel Fold screen) are stored portrait; rotate them in the simulator.
+ */
+export const googleDevices: DeviceInput[] = [
+  // Pixel 10 (2025)
+  { id: "pixel-10-pro-fold", name: "Pixel 10 Pro Fold (folded)", brand: "Google", kind: "foldable", year: 2025, platform: "android", osVersion: "16", screen: { width: 412, height: 900 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 26, bezel: 11, color: "#4b5563" }, approx: true },
+  { id: "pixel-10-pro-fold-unfolded", name: "Pixel 10 Pro Fold (unfolded)", brand: "Google", kind: "foldable", year: 2025, platform: "android", osVersion: "16", screen: { width: 791, height: 820 }, dpr: 2.625, frame: { cutout: "none", screenRadius: 20, bezel: 12, color: "#4b5563", crease: true }, approx: true },
+  { id: "pixel-10-pro-xl", name: "Pixel 10 Pro XL", brand: "Google", kind: "phone", year: 2025, platform: "android", osVersion: "16", screen: { width: 448, height: 998 }, dpr: 3, frame: { cutout: "punch-hole-center", screenRadius: 34, bezel: 10, color: "#cfd6cf" }, approx: true },
+  { id: "pixel-10-pro", name: "Pixel 10 Pro", brand: "Google", kind: "phone", year: 2025, platform: "android", osVersion: "16", screen: { width: 410, height: 914 }, dpr: 3.125, frame: { cutout: "punch-hole-center", screenRadius: 34, bezel: 10, color: "#2f3a4a" }, approx: true },
+  { id: "pixel-10", name: "Pixel 10", brand: "Google", kind: "phone", year: 2025, platform: "android", osVersion: "16", screen: { width: 412, height: 923 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 34, bezel: 11, color: "#7e86c7" }, approx: true },
+
+  // Pixel 9 (2024–2025)
+  { id: "pixel-9a", name: "Pixel 9a", brand: "Google", kind: "phone", year: 2025, platform: "android", osVersion: "15", screen: { width: 412, height: 923 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 30, bezel: 13, color: "#c8b8e8" }, approx: true },
+  { id: "pixel-9-pro-fold", name: "Pixel 9 Pro Fold (folded)", brand: "Google", kind: "foldable", year: 2024, platform: "android", osVersion: "15", screen: { width: 412, height: 923 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 26, bezel: 11, color: "#dedbd5" }, approx: true },
+  { id: "pixel-9-pro-fold-unfolded", name: "Pixel 9 Pro Fold (unfolded)", brand: "Google", kind: "foldable", year: 2024, platform: "android", osVersion: "15", screen: { width: 791, height: 820 }, dpr: 2.625, frame: { cutout: "none", screenRadius: 20, bezel: 12, color: "#dedbd5", crease: true }, approx: true },
+  { id: "pixel-9-pro-xl", name: "Pixel 9 Pro XL", brand: "Google", kind: "phone", year: 2024, platform: "android", osVersion: "15", screen: { width: 448, height: 998 }, dpr: 3, frame: { cutout: "punch-hole-center", screenRadius: 34, bezel: 10, color: "#e8d9c9" }, approx: true },
+  { id: "pixel-9-pro", name: "Pixel 9 Pro", brand: "Google", kind: "phone", year: 2024, platform: "android", osVersion: "15", screen: { width: 410, height: 914 }, dpr: 3.125, frame: { cutout: "punch-hole-center", screenRadius: 34, bezel: 10, color: "#3c3f44" }, approx: true },
+  { id: "pixel-9", name: "Pixel 9", brand: "Google", kind: "phone", year: 2024, platform: "android", osVersion: "15", screen: { width: 412, height: 923 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 34, bezel: 11, color: "#f0c6d4" }, approx: true },
+
+  // Pixel 8 (2023–2024)
+  { id: "pixel-8a", name: "Pixel 8a", brand: "Google", kind: "phone", year: 2024, platform: "android", osVersion: "15", screen: { width: 412, height: 915 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 30, bezel: 13, color: "#a9d4d2" }, approx: true },
+  { id: "pixel-8-pro", name: "Pixel 8 Pro", brand: "Google", kind: "phone", year: 2023, platform: "android", osVersion: "15", screen: { width: 448, height: 998 }, dpr: 3, frame: { cutout: "punch-hole-center", screenRadius: 34, bezel: 10, color: "#a8c3dc" } },
+  { id: "pixel-8", name: "Pixel 8", brand: "Google", kind: "phone", year: 2023, platform: "android", osVersion: "15", screen: { width: 412, height: 915 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 32, bezel: 11, color: "#e9d4c2" } },
+  { id: "pixel-fold", name: "Pixel Fold (folded)", brand: "Google", kind: "foldable", year: 2023, platform: "android", osVersion: "15", screen: { width: 412, height: 797 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 24, bezel: 12, color: "#2f3133" }, approx: true },
+  // Inner screen is natively landscape (fold runs top to bottom when held wide),
+  // so the portrait-stored entry has no vertical crease.
+  { id: "pixel-fold-unfolded", name: "Pixel Fold (unfolded)", brand: "Google", kind: "foldable", year: 2023, platform: "android", osVersion: "15", screen: { width: 701, height: 841 }, dpr: 2.625, frame: { cutout: "none", screenRadius: 18, bezel: 22, color: "#2f3133" }, approx: true },
+
+  // Pixel 7 / 6 (2021–2023)
+  { id: "pixel-7a", name: "Pixel 7a", brand: "Google", kind: "phone", year: 2023, platform: "android", osVersion: "15", screen: { width: 412, height: 915 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 28, bezel: 14, color: "#8fb3d9" }, approx: true },
+  { id: "pixel-7-pro", name: "Pixel 7 Pro", brand: "Google", kind: "phone", year: 2022, platform: "android", osVersion: "15", screen: { width: 412, height: 892 }, dpr: 3.5, frame: { cutout: "punch-hole-center", screenRadius: 30, bezel: 10, color: "#c9cfc4" } },
+  { id: "pixel-7", name: "Pixel 7", brand: "Google", kind: "phone", year: 2022, platform: "android", osVersion: "15", screen: { width: 412, height: 915 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 30, bezel: 12, color: "#d8dcc6" } },
+  { id: "pixel-6a", name: "Pixel 6a", brand: "Google", kind: "phone", year: 2022, platform: "android", osVersion: "15", screen: { width: 412, height: 915 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 28, bezel: 14, color: "#b9c7b3" }, approx: true },
+  { id: "pixel-6-pro", name: "Pixel 6 Pro", brand: "Google", kind: "phone", year: 2021, platform: "android", osVersion: "15", screen: { width: 412, height: 892 }, dpr: 3.5, frame: { cutout: "punch-hole-center", screenRadius: 30, bezel: 10, color: "#f0e6d8" }, approx: true },
+  { id: "pixel-6", name: "Pixel 6", brand: "Google", kind: "phone", year: 2021, platform: "android", osVersion: "15", screen: { width: 412, height: 915 }, dpr: 2.625, frame: { cutout: "punch-hole-center", screenRadius: 30, bezel: 12, color: "#f2b7a2" } },
+
+  // Older Pixels
+  { id: "pixel-5", name: "Pixel 5", brand: "Google", kind: "phone", year: 2020, platform: "android", osVersion: "14", screen: { width: 393, height: 851 }, dpr: 2.75, frame: { cutout: "punch-hole-left", screenRadius: 26, bezel: 11, color: "#a7b8a3" } },
+  { id: "pixel-4a", name: "Pixel 4a", brand: "Google", kind: "phone", year: 2020, platform: "android", osVersion: "13", screen: { width: 393, height: 851 }, dpr: 2.75, frame: { cutout: "punch-hole-left", screenRadius: 24, bezel: 12, color: "#202124" }, approx: true },
+  { id: "pixel-4", name: "Pixel 4", brand: "Google", kind: "phone", year: 2019, platform: "android", osVersion: "13", screen: { width: 353, height: 745 }, dpr: 3, frame: { cutout: "none", screenRadius: 24, bezel: 14, color: "#f2a65a" }, approx: true },
+  { id: "pixel-3", name: "Pixel 3", brand: "Google", kind: "phone", year: 2018, platform: "android", osVersion: "12", screen: { width: 393, height: 786 }, dpr: 2.75, frame: { cutout: "none", screenRadius: 20, bezel: 16, color: "#f4c7c3" }, approx: true },
+
+  // Nexus
+  { id: "nexus-6p", name: "Nexus 6P", brand: "Google", kind: "phone", year: 2015, platform: "android", osVersion: "8", screen: { width: 412, height: 732 }, dpr: 3.5, frame: { cutout: "none", screenRadius: 6, bezel: 22, color: "#c9cbcf" } },
+  { id: "nexus-5x", name: "Nexus 5X", brand: "Google", kind: "phone", year: 2015, platform: "android", osVersion: "8", screen: { width: 412, height: 732 }, dpr: 2.625, frame: { cutout: "none", screenRadius: 6, bezel: 22, color: "#1f2326" } },
+  { id: "nexus-5", name: "Nexus 5", brand: "Google", kind: "phone", year: 2013, platform: "android", osVersion: "6", screen: { width: 360, height: 640 }, dpr: 3, frame: { cutout: "none", screenRadius: 4, bezel: 22, color: "#1b1b1d" } },
+  { id: "nexus-7", name: "Nexus 7", brand: "Google", kind: "tablet", year: 2013, platform: "android", osVersion: "6", screen: { width: 600, height: 960 }, dpr: 2, frame: { cutout: "none", screenRadius: 4, bezel: 34, color: "#1b1b1d" } },
+  { id: "nexus-10", name: "Nexus 10", brand: "Google", kind: "tablet", year: 2012, platform: "android", osVersion: "5", screen: { width: 800, height: 1280 }, dpr: 2, frame: { cutout: "none", screenRadius: 4, bezel: 40, color: "#2a2a2c" } },
+
+  // Tablets and smart displays
+  { id: "pixel-tablet", name: "Pixel Tablet", brand: "Google", kind: "tablet", year: 2023, platform: "android", osVersion: "15", screen: { width: 800, height: 1280 }, dpr: 2, frame: { cutout: "none", screenRadius: 18, bezel: 34, color: "#ece6dc" }, approx: true },
+  { id: "nest-hub-max", name: "Nest Hub Max", brand: "Google", kind: "tablet", year: 2019, platform: "android", osVersion: "10", screen: { width: 800, height: 1280 }, dpr: 2, frame: { cutout: "none", screenRadius: 6, bezel: 36, color: "#f2f1ee" } },
+  { id: "nest-hub", name: "Nest Hub", brand: "Google", kind: "tablet", year: 2018, platform: "android", osVersion: "10", screen: { width: 600, height: 1024 }, dpr: 2, frame: { cutout: "none", screenRadius: 6, bezel: 30, color: "#f2f1ee" } },
+];

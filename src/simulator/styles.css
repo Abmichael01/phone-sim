@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/* Dark by default; the surrounding UI follows prefers-color-scheme. */
+@theme {
+  --color-app: #0d0f14;
+  --color-panel: #161920;
+  --color-raised: #20242e;
+  --color-line: #272c37;
+  --color-ink: #e8eaef;
+  --color-muted: #8a92a3;
+  --color-accent: #7d95ff;
+  --color-accent-ink: #0d0f14;
+  --color-danger: #ff5c5c;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-app: #eef0f4;
+    --color-panel: #ffffff;
+    --color-raised: #e4e7ee;
+    --color-line: #d9dde5;
+    --color-ink: #151922;
+    --color-muted: #5e6677;
+    --color-accent: #3d55d6;
+    --color-accent-ink: #ffffff;
+    --color-danger: #d93636;
+  }
+}
+
+:root {
+  color-scheme: dark light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-app);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Soft spotlight and dot grid behind the device. */
+.stage {
+  background-color: var(--color-app);
+  background-image:
+    radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--color-accent) 9%, transparent), transparent 60%),
+    radial-gradient(color-mix(in srgb, var(--color-muted) 22%, transparent) 1px, transparent 1px);
+  background-size: auto, 22px 22px;
+}
+
+button:focus-visible,
+[role="option"]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@keyframes phone-sim-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
