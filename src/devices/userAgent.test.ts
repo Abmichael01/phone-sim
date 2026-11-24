@@ -67,8 +67,8 @@ describe("detectChromeMajor", () => {
 
 describe("buildFrameEnv", () => {
   it("carries everything mobile-env.js validates", () => {
-    const env = buildFrameEnv(resolveDevice("pixel-8"), 140, "abcdefghijklmnopabcdefghijklmnop");
-    expect(env).toMatchObject({ phoneSim: 1, platform: "android", mobile: true, touch: true, osVersion: "15" });
+    const env = buildFrameEnv(resolveDevice("pixel-8"), 140, "abcdefghijklmnopabcdefghijklmnop", true, false);
+    expect(env).toMatchObject({ phoneSim: 1, platform: "android", mobile: true, touch: true, osVersion: "15", cursor: true, syncScroll: false });
     expect(JSON.parse(JSON.stringify(env))).toEqual(env);
   });
 });

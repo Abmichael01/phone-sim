@@ -1,32 +1,29 @@
 import { useEffect } from "react";
+import type { Device } from "@/schemas/device";
 import { requestApplyDevice } from "@/shared/messages";
 import { useSimulatorStore } from "@/stores/simulator";
 
 /**
- * Whenever the device changes, asks the background to point this tab's header
- * rules at it. The frame only loads once the rules for the current device are
- * active, so the first request already carries the device's User-Agent.
+ * Points this tab's header rules at the active device. Marks `rulesReady` once
+ * the initial rule update finishes so frames only mount after framing headers
+ * are stripped, while later focus switches update headers without unmounting
+ * sibling devices on stage.
  */
-export function useDeviceRules(): void {
-  const deviceId = useSimulatorStore((state) => state.deviceId);
-
+export function useDeviceRules(device: Device): void {
+  const { id, platform, kind, osVersion, userAgent } = device;
   useEffect(() => {
     let current = true;
-    const { setRulesDevice, showToast } = useSimulatorStore.getState();
-    setRulesDevice(null);
-    requestApplyDevice(deviceId)
-      .then((response) => {
-        if (!current) return;
-        if (!response.ok) showToast("error", `Device headers not applied: ${response.error}`);
-        setRulesDevice(deviceId);
-      })
-      .catch((error: unknown) => {
-        if (!current) return;
-        showToast("error", `Device headers not applied: ${error instanceof Error ? error.message : String(error)}`);
-        setRulesDevice(deviceId);
-      });
+    const { setRulesReady, showToast } = useSimulatorStore.getState();
+    const finish = (error: string | null): void => {
+      if (!current) return;
+      if (error) showToast("error", `Device headers not applied: ${error}`);
+      setRulesReady(true);
+    };
+    requestApplyDevice(id)
+      .then((response) => finish(response.ok ? null : response.error))
+      .catch((error: unknown) => finish(error instanceof Error ? error.message : String(error)));
     return () => {
       current = false;
     };
-  }, [deviceId]);
+  }, [id, platform, kind, osVersion, userAgent]);
 }

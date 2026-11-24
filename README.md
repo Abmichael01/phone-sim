@@ -5,17 +5,40 @@ phone, tablet and foldable frames. No accounts, no tracking, no network calls of
 
 ## Features
 
-- 180+ devices: iPhones (SE to 17 Pro Max), iPads, Galaxy S / A / Z Fold / Z Flip / Tab, Pixels and
-  Nexus, Xiaomi / Redmi / POCO, OnePlus, Motorola, Huawei, Nothing, OPPO, vivo, realme, Infinix,
-  Tecno, itel, Surface Duo and Amazon Fire. Estimated specs are marked **≈**.
-- Searchable device picker with filters (phones, tablets, foldables, brand), keyboard ↑ / ↓ / Enter,
-  and the last device is remembered.
-- Frames drawn with CSS from each device's numbers: Dynamic Island, notch, punch hole, waterdrop,
-  home button, side buttons, fold crease and a live status bar.
-- The site sees the device: mobile User-Agent and client hints, `navigator.platform`, touch points,
-  `userAgentData`, and `(pointer: coarse)` / `(hover: none)` in `matchMedia`.
-- Rotate, zoom (Fit / 100% / 75% / 50%), URL bar that follows in-site navigation, reload, open in tab.
-- Screenshot to PNG (with frame, or screen only) and screen recording to MP4 / WebM.
+- **Multi-device side-by-side canvas** — Opens with a Phone + Tablet (`iPhone 16 Pro` + `iPad Pro 11" (M4)`)
+  at the same time, remembers your workspace, and lets you place up to **4 devices** side by side with
+  1-click layout presets (`Phone + Tab`, `2 Phones`, `Single`), silky 60 fps **synced scrolling**, and
+  **soft SPA synced navigation** (switches React / Next.js / Vue / Svelte routes across sibling devices
+  with zero full-page reload).
+- **Original flat pill left-rail workspace** — Slim 57 px matte left icon rail with rounded-full controls,
+  crisp cobalt blue active states, zero drop shadows, and full vertical stage height.
+- 189 built-in devices (Apple iPhone SE–17 Pro Max & iPads, Samsung Galaxy S / A / Z Fold / Z Flip /
+  Tab, Google Pixel & Nexus, Xiaomi / Redmi / POCO, OnePlus, Motorola, Huawei, Nothing, OPPO, vivo,
+  realme, Infinix, Tecno, itel, Surface Duo, Amazon Fire) plus **Custom devices** saved locally.
+  Estimated specs are marked **≈**.
+- Realistic CSS-drawn hardware frames: per-model proportions and corner radii, multi-layer brushed
+  anodized metallic rims with corner specular chamfer highlights, micro-grain satin finish and
+  finish picker (including Deep Burgundy & titanium finishes), antenna bands, machined side buttons,
+  earpiece/camera lenses, fold hinges and creases, hidden desktop scrollbars, and live iOS / Android
+  status bars.
+- In-phone Safari (iOS / iPadOS) and Chrome (Android) browser bars with per-device working back,
+  forward, reload, and domain editing, shrinking each site viewport realistically.
+- Touch finger cursor with drag-to-scroll momentum inside every frame (toggleable in Settings).
+- Keyboard shortcuts (`D`, `A`, `B`, `R`, `Y`, `[` / `]`, `S`, `Shift+S`, `V`, `F`, `1`/`2`/`3`,
+  `Ctrl/Cmd+L`, `Alt+←`/`→`, `Ctrl/Cmd+wheel`).
+- **Curated dot grids & dark wallpapers** — Opens on clean `Dark Dots` by default, with 10 bundled
+  offline backdrops (`Dark Dots`, `Cobalt Dots`, `Obsidian`, `Studio Light`, `Dark Topo`,
+  `Cobalt Aurora`, `Editor Bokeh`, `Cyber Horizon`, `Terminal Wave`, and `Blueprint Grid`),
+  switchable via the left rail (`B`).
+- **Auto-scroll video recording** — Record strictly the active phone frame or screen only (never
+  the rail or sibling devices) manually or in **Auto-scroll mode** with adjustable scroll speed
+  (`30–450 px/s`), hero pause, start-from-top, and automatic stop at the bottom of the page.
+- **Screenshots & demo polish** — 1-click screenshot drawer (`All devices`, `Active w/ frame`,
+  `Screen only`, `+ Bars`) with optional transparent rounded PNG corners, independent phone-bar
+  light/dark tone, and a clean `"9:41"` demo clock toggle.
+- **Solo focus & reorder** — Double-click any device caption (or click its expand icon) to solo
+  focus it at full Fit size; reorder devices left/right in the stage drawer; clicking or scrolling
+  inside any iframe automatically focuses that device.
 
 ## Install (load unpacked)
 
@@ -58,6 +81,9 @@ because saved settings use it.
 ## Known limits
 
 - `devicePixelRatio` cannot be faked inside a frame: the site sees your monitor's pixel ratio.
+- When multiple devices are open at once, each frame gets its own viewport width and JS `navigator` /
+  touch environment, while the tab's HTTP `User-Agent` header follows the currently focused device
+  (Manifest V3 `declarativeNetRequest` scopes headers per tab, not per iframe).
 - CSS `@media (hover: …)` / `(pointer: …)` rules in stylesheets still match your mouse; only the
   JavaScript `matchMedia` checks are switched to touch.
 - Framing headers (`X-Frame-Options`, CSP) are removed in simulator tabs, but some sites still
@@ -73,3 +99,9 @@ because saved settings use it.
 ```sh
 pnpm typecheck && pnpm test && pnpm build
 ```
+
+## License
+
+[MIT](LICENSE). Device names belong to their makers and are used only to say which screen size a
+frame matches. All frames, icons and wallpapers are drawn in code for this project; no device
+artwork or images from other simulators are included.

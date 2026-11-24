@@ -25,6 +25,17 @@ export function resolveDevice(id: string): Device {
   return device;
 }
 
+/** Catalog device or one of the user's custom devices. */
+export function findDevice(id: string, customDevices: readonly Device[]): Device | undefined {
+  return devicesById.get(id) ?? customDevices.find((device) => device.id === id);
+}
+
+/** The device drawn in the chosen finish (the colour name saved per device), if it has that finish. */
+export function withFinish(device: Device, finishName: string | undefined): Device {
+  const finish = finishName ? device.frame.finishes?.find((option) => option.name === finishName) : undefined;
+  return finish ? { ...device, frame: { ...device.frame, color: finish.color } } : device;
+}
+
 /** Brands shown first in the picker; any other brand follows alphabetically. */
 const BRAND_PRIORITY = ["Apple", "Samsung", "Google"];
 
