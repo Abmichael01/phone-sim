@@ -54,6 +54,88 @@ save; reload the extension afterwards.
 Open a site in Phone Sim with the toolbar button, **Alt+Shift+M**, or the right-click menu
 ("Open page in Phone Sim" / "Open link in Phone Sim").
 
+## Check responsive layouts from the terminal (for AI agents)
+
+The `phone-sim` command opens a page in a headless browser on real device sizes from the same
+catalog, finds layout problems, and saves annotated, framed screenshots plus a report an AI coding
+agent can act on. Nothing to set up: the first run downloads a headless browser by itself.
+
+```sh
+npx phone-sim check                    # finds your dev server (3000, 5173, 4321, 8080, 8000, 4200, 3001)
+npx phone-sim check localhost:5173     # a URL, a port (3000) or an .html file
+npx phone-sim init                     # tells AI agents in this repo to run the check
+```
+
+From this repo (not published yet): `pnpm build:cli`, then `node dist-cli/phone-sim.js check …`.
+
+The output is kept short. Each issue is listed once: issues found on every device come first, then
+issues a few devices share, then what is specific to one device. It shows at most 10 issues per
+section and one fix line per rule, and hides info-level notes. It ends with the path of
+`report.html`, which has everything (all devices side by side, issues next to each screenshot):
+
+```text
+On all 5 devices  ⚠ 4 warnings
+  1. ⚠ small-tap-target  span.icons > button.icon-btn  2 elements: worst is 18×18px with another target within 24px …
+     Fix: Make it at least 24×24px (44×44px is better): add padding or min-width/min-height.
+  …
+iPhone 16 Pro  402×874 @3x  ✖ 1 error  ⚠ 6 warnings
+  7. ✖ horizontal-overflow  body > main > div.promo  sticks out 166px past the right edge …
+     Fix: Remove the fixed width (use max-width: 100%), let rows wrap …
+```
+
+An issue has the same number on every screenshot and in every report. Per device:
+`<id>.png` (framed, with numbered boxes), `<id>-raw.png` (plain screen), plus `report.json`,
+`report.md` (paste into an AI chat) and `report.html`. `report.json` and `--json` hold errors
+and warnings only, at most 25 per device, with an `omitted` count for what was left out.
+`--all` lists every issue and note everywhere.
+
+| Option | What it does |
+| --- | --- |
+| `--preset common` | iPhone SE, iPhone 16 Pro, Galaxy A16, Pixel 9, iPad mini (default) |
+| `--preset phones` | iPhone SE, iPhone 16 Pro, iPhone 17 Pro Max, Galaxy A16, Galaxy S25 Ultra, Pixel 9 |
+| `--preset all-sizes` | one device per screen-width class, from small phones to large tablets |
+| `--devices <id,id>` | exact devices; list ids with `phone-sim devices [--search <text>] [--json]` |
+| `--landscape` | also check every device turned sideways |
+| `--full-page` | screenshot the whole page instead of the first screen |
+| `--json` | JSON report on stdout and nothing else (progress goes to stderr) |
+| `--out <dir>` | output folder (default `./phone-sim-report`) |
+| `--fail-on error\|warn\|never` | when to exit 1 (default `error`) |
+| `--open` | open `report.html` when done |
+| `--wait <ms>` / `--timeout <ms>` | extra wait after load (500) / load timeout (30000) |
+| `--no-frame` / `--no-annotate` | plain screenshots / no numbered boxes |
+| `--all` | every issue and note in the terminal, the JSON and the screenshots (no limits) |
+| `--debug` | full error details |
+
+**Exit codes:** `0` no problems at the `--fail-on` level, `1` problems found, `2` the check could not
+run (bad option, unknown device, page did not load, browser missing). Every error message ends with
+the exact command to run next. Set `PHONE_SIM_NO_INSTALL=1` to stop the automatic browser download
+(it then prints `npx playwright install chromium` instead).
+
+**Rules**
+
+| Rule | Level | Finds |
+| --- | --- | --- |
+| `viewport-meta` | error | no `<meta name="viewport" content="width=device-width">` (`info` on iPads, which show desktop sites zoomed to fit) |
+| `horizontal-overflow` | error | the page scrolls sideways; lists the elements that cause it (not their children), with how many px stick out |
+| `small-tap-target` | warn | links, buttons and inputs under 24×24 px with another target within 24 px (WCAG 2.2 AA 2.5.8, including its spacing exception). Links in running text and footnote marks are exempt. `info` under 44×44 px (Apple) |
+| `small-text` | warn | text under 12 px (not counting `<sup>` / `<sub>`) |
+| `ios-input-zoom` | warn | iPhone/iPad only: inputs under 16 px, which makes Safari zoom in on tap |
+| `text-clipped` | warn | text cut off by `overflow: hidden` without an ellipsis |
+| `fixed-covers-screen` | warn | fixed or sticky elements (cookie banners, headers, popups) covering over 30% of the screen on load |
+| `safe-area` | warn | with `viewport-fit=cover` on notch / Dynamic Island / punch-hole phones: fixed bars at the top or bottom edge without safe-area padding |
+| `image-oversize` | info | images over 2.5× larger than the screen needs |
+
+Look-alike elements are grouped into one issue with a count and up to 3 example selectors. "Look-alike"
+means the same tag and stable classes for the element and its parent, so every footnote link or nav
+item is one issue. Screen-reader-only elements (visually hidden text clipped to 1 px) are
+ignored by every rule.
+
+**Viewport note:** each device is checked with the viewport set to its full screen size, at its real
+pixel ratio, with its User-Agent and touch. Every device honours the page's viewport tag, iPads too:
+they send a Mac User-Agent as iPad Safari does. Real browsers subtract their address bar
+and toolbar, so the real visible area is a little shorter; widths are exact. The CLI only contacts the
+URL being checked (and localhost ports when looking for a dev server); no telemetry.
+
 ## Add a device
 
 Add one object to the brand's file in `src/devices/catalog/` (or `others.ts`). Nothing else changes.
@@ -98,6 +180,7 @@ because saved settings use it.
 
 ```sh
 pnpm typecheck && pnpm test && pnpm build
+pnpm check:fixtures   # the built CLI on fixtures/responsive/: bad.html must fail; good.html and article.html must pass
 ```
 
 ## License

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Good responsive page (phone-sim fixture)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #1b1b1d; background: #fafaf7; }
+  .topbar {
+    position: sticky; top: 0; z-index: 1;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: calc(8px + env(safe-area-inset-top)) 16px 8px;
+    background: #1f3a8a; color: #fff;
+  }
+  .topbar button { min-width: 44px; min-height: 44px; border: 0; border-radius: 10px; background: #ffffff26; color: #fff; font-size: 18px; }
+  main { padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); max-width: 720px; margin: 0 auto; }
+  .promo { max-width: 100%; padding: 16px; background: #fde68a; border-radius: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .card { background: #fff; border-radius: 12px; padding: 12px; min-width: 0; }
+  .card img { display: block; width: 100%; height: auto; border-radius: 8px; }
+  .name { overflow-wrap: anywhere; }
+  .small { font-size: 13px; color: #555; }
+  input, select { font-size: 16px; width: 100%; min-height: 44px; padding: 10px 12px; }
+  .cta { display: block; width: 100%; min-height: 48px; font-size: 16px; border: 0; border-radius: 12px; background: #1f3a8a; color: #fff; }
+  nav.links { display: flex; flex-wrap: wrap; gap: 8px; }
+  nav.links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <button aria-label="Menu">☰</button>
+    <strong>Shop</strong>
+    <button aria-label="Cart">🛒</button>
+  </header>
+  <main>
+    <h1>Summer sale</h1>
+    <p>Read the <a href="#terms">terms and conditions</a> before you buy anything from this page.</p>
+    <div class="promo">Free shipping on every order over 50 euros, this week only.</div>
+    <div class="grid">
+      <div class="card">
+        <img alt="Purple product" width="140" height="94" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='3' height='2' fill='%237c3aed'/%3E%3C/svg%3E">
+        <div class="name">Limited edition collector item with a very long name</div>
+      </div>
+      <div class="card">
+        <img alt="Teal product" width="140" height="94" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='3' height='2' fill='%230d9488'/%3E%3C/svg%3E">
+        <div class="name">Everyday bag</div>
+      </div>
+    </div>
+    <p class="small">Prices include VAT. Offer valid while stocks last.</p>
+    <label>Search <input type="search" placeholder="Search products"></label>
+    <p><button class="cta">Show all products</button></p>
+    <nav class="links" aria-label="Footer">
+      <a href="#about">About</a>
+      <a href="#help">Help</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </main>
+</body>
+</html>

@@ -459,7 +459,18 @@ Project requirements may extend this guide. Add them below or in a nearer nested
 any website inside realistic phone, tablet and foldable frames, with a device picker, rotation,
 screenshots and screen recording. Open source (MIT); free, no accounts, no paywall, no tracking.
 
-- **Scope:** frontend-only browser extension. No backend, no server, no network calls of its own.
+- **Scope:** the repo has two parts.
+  1. The **extension** (everything outside `src/cli/`): frontend-only, no backend, no server, no
+     network calls of its own. All rules below apply to it unchanged.
+  2. The **`phone-sim` CLI** (`src/cli/`, built to `dist-cli/phone-sim.js` by `vite.cli.config.ts`):
+     a Node 20+ command that loads a URL in headless Playwright Chromium on catalog device sizes,
+     runs the responsive rules and writes annotated screenshots and reports. It only contacts the
+     URL being checked (plus localhost ports when looking for a dev server, and Playwright's own
+     one-time browser download); no telemetry. Playwright always runs `headless: true`.
+     It reuses `src/devices/` (catalog, User-Agent, frame geometry); never duplicate that logic.
+     Pure modules (args, device selection, emulation, issues, report, frame, overlay, target,
+     init) have unit tests; `rules.ts` runs inside the page and must stay
+     self-contained (no imports or outer variables). Type-checked by `tsconfig.cli.json`.
 - **Stack:** TypeScript strict, React 19, Tailwind CSS v4 (`@tailwindcss/vite`), Zustand (UI state),
   Zod (validates the device catalog and saved settings), Vite (multi-entry build), Vitest, pnpm.
   The Next.js / ShadCN / TanStack Query rules in sections 5–8 do not apply: an extension has no
@@ -467,7 +478,11 @@ screenshots and screen recording. Open source (MIT); free, no accounts, no paywa
 - **Port:** none. The extension is built, not served. `pnpm dev` = `vite build --watch` into
   `dist/`; the VS Code task "Start frontend" runs it. Reload the extension after a rebuild.
 - **Load it:** browser extensions page → Developer mode → "Load unpacked" → pick `dist/`.
-- **Checks before done:** `pnpm typecheck`, `pnpm test`, `pnpm build`.
+- **Checks before done:** `pnpm typecheck` (extension + CLI), `pnpm test`, `pnpm build` (builds
+  `dist/` and `dist-cli/`). For CLI changes also run `pnpm check:fixtures` (the built CLI must find
+  the problems in `fixtures/responsive/bad.html` and exit 1, and pass `good.html` and `article.html`
+  with exit 0 and no warnings) and
+  look at a couple of the generated PNGs in `phone-sim-report/fixtures-*/`.
 - **Devices:** one object per device in `src/devices/catalog/<brand>.ts`, validated by the Zod
   schema in `src/schemas/device.ts`. Adding a phone must never need code changes elsewhere.
   Device `id`s are permanent (saved settings use them). Mark estimated specs `approx: true`.

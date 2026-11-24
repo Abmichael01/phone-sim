@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "resolveJsonModule": true
+  },
+  "include": ["src/cli", "src/types/user-agent-data.d.ts", "vite.cli.config.ts"],
+  "exclude": []
+}
