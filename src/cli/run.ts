@@ -13,6 +13,7 @@ import { mapLimit } from "./pool";
 import { toHtml, toMarkdown } from "./report";
 import { collectIssues, hasViewportFitCover, type RuleOptions } from "./rules";
 import { INSTALL_COMMAND, installHeadlessChromium, isMissingBrowserError } from "./system";
+import { RUN } from "./command";
 
 /** A failure the user can fix: what went wrong plus the exact next command. */
 export class CheckError extends Error {
@@ -82,7 +83,7 @@ function firstLine(error: unknown): string {
 /** Turns a navigation failure into a plain message and the next command to run. */
 export function describeLoadError(error: unknown, url: string, timeout: number): CheckError {
   const text = error instanceof Error ? error.message : String(error);
-  const retry = `npx phone-sim check ${url}`;
+  const retry = `${RUN} check ${url}`;
   if (/ERR_CONNECTION_REFUSED|ECONNREFUSED/.test(text)) {
     return new CheckError(`Nothing is answering at ${url}.`, `Start your dev server, then run: ${retry}`, text);
   }
@@ -93,7 +94,7 @@ export function describeLoadError(error: unknown, url: string, timeout: number):
     return new CheckError(`File not found: ${url.startsWith("file:") ? fileURLToPath(url) : url}`, "Check the path, then run the command again.", text);
   }
   if (/ERR_CERT|SSL/.test(text)) {
-    return new CheckError(`The HTTPS certificate of ${url} is not valid.`, `For a local server use http://, e.g. npx phone-sim check ${url.replace(/^https:/, "http:")}`, text);
+    return new CheckError(`The HTTPS certificate of ${url} is not valid.`, `For a local server use http://, e.g. ${RUN} check ${url.replace(/^https:/, "http:")}`, text);
   }
   if (/Timeout \d+ms exceeded|TimeoutError/i.test(text)) {
     return new CheckError(

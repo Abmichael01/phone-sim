@@ -128,7 +128,7 @@ describe("terminal output", () => {
   it("warns when the page itself answered with an HTTP error", () => {
     const text = formatHuman(report([device([], { status: 500 })], { errors: 0, warnings: 0, infos: 0 }));
     expect(text).toContain("⚠ The page answered HTTP 500, so this checked an error page.");
-    expect(text).toContain("run: npx phone-sim check http://localhost:3000/");
+    expect(text).toContain("run: npx -y github:Abmichael01/phone-sim check http://localhost:3000/");
   });
 
   it("uses colours only on a terminal without NO_COLOR", () => {

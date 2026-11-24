@@ -2,6 +2,5 @@ node_modules/
 dist/
 *.zip
 .DS_Store
-dist-cli/
 phone-sim-report/
 .claude/worktrees/

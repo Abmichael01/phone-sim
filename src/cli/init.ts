@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { RUN } from "./command";
 
 /** `phone-sim init`: tells AI agents working in a repo to run the responsive check. */
 
@@ -12,7 +13,7 @@ export const AGENT_SECTION = `${START_MARKER}
 
 After every UI change, check the page on real phone and tablet sizes:
 
-1. With the dev server running, run \`npx phone-sim check <url> --json\`
+1. With the dev server running, run \`${RUN} check <url> --json\`
    (leave out the URL and it finds the local dev server on its own).
 2. Fix every error and warning it reports. Each one names the rule, a CSS selector, what is wrong and how to fix it.
 3. Run the check again until it reports no errors and no warnings.

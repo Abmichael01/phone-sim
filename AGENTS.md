@@ -482,7 +482,10 @@ screenshots and screen recording. Open source (MIT); free, no accounts, no paywa
   `dist/` and `dist-cli/`). For CLI changes also run `pnpm check:fixtures` (the built CLI must find
   the problems in `fixtures/responsive/bad.html` and exit 1, and pass `good.html` and `article.html`
   with exit 0 and no warnings) and
-  look at a couple of the generated PNGs in `phone-sim-report/fixtures-*/`.
+  look at a couple of the generated PNGs in `phone-sim-report/fixtures-*/`. The built CLI
+  `dist-cli/phone-sim.js` is committed (so `npx github:Abmichael01/phone-sim` needs no build):
+  after CLI changes run `pnpm build:cli`, commit it, and `pnpm check:cli-bundle` must pass.
+  The agent skill lives in `skills/phone-sim/SKILL.md`; keep it in step with the CLI.
 - **Devices:** one object per device in `src/devices/catalog/<brand>.ts`, validated by the Zod
   schema in `src/schemas/device.ts`. Adding a phone must never need code changes elsewhere.
   Device `id`s are permanent (saved settings use them). Mark estimated specs `approx: true`.
