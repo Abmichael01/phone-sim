@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* CLI-only folders: their HTML and class names must not add utilities to the extension. */
+@source not "../cli";
+@source not "../../fixtures";
+@source not "../../scripts";
+
 /* Dark by default; Settings switches to light (data-theme on <html>). Flat, crisp, zero drop shadows. */
 @theme {
   --color-stage: #1b1f25;

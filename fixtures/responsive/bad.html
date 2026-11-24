@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover without safe-area padding: the fixed header sits under the notch. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bad responsive page (phone-sim fixture)</title>
+<style>
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #1b1b1d; background: #fafaf7; }
+  /* safe-area: fixed to the top with almost no padding */
+  .topbar { position: fixed; top: 0; left: 0; right: 0; padding: 6px 12px; background: #1f3a8a; color: #fff; display: flex; gap: 8px; align-items: center; }
+  .topbar .icons { display: flex; gap: 3px; }
+  .topbar .icon-btn { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 4px; background: #fff3; color: #fff; font-size: 11px; }
+  main { padding: 64px 16px 16px; }
+  /* horizontal-overflow: a fixed width wider than every phone */
+  .promo { width: 520px; padding: 16px; background: #fde68a; border-radius: 12px; }
+  /* not a cause: wide content that scrolls inside its own box */
+  pre.code { overflow-x: auto; background: #111; color: #eee; padding: 8px; }
+  pre.code span { display: inline-block; width: 900px; }
+  /* small-text */
+  .legal { font-size: 10px; color: #555; }
+  /* text-clipped */
+  .tag { display: block; width: 120px; white-space: nowrap; overflow: hidden; background: #e0e7ff; padding: 2px 6px; }
+  /* ios-input-zoom */
+  input.search { font-size: 13px; width: 100%; padding: 12px; box-sizing: border-box; }
+  /* fixed-covers-screen: a cookie banner taking almost half the screen */
+  .cookies { position: fixed; left: 0; right: 0; bottom: 0; height: 45vh; padding: 16px; box-sizing: border-box; background: #fff; box-shadow: 0 -4px 20px #0003; }
+  .cookies button { font-size: 16px; padding: 12px 20px; }
+  .thumb { width: 80px; height: auto; display: block; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <strong>Shop</strong>
+    <!-- small-tap-target: two 18px buttons right next to each other -->
+    <span class="icons">
+      <button class="icon-btn" aria-label="Menu">☰</button>
+      <button class="icon-btn" aria-label="Cart">🛒</button>
+    </span>
+  </header>
+  <main>
+    <h1>Summer sale</h1>
+    <p>Read the <a href="#terms">terms and conditions</a> before you buy anything from this page.</p>
+    <div class="promo">Free shipping on every order over 50 euros, this week only.</div>
+    <pre class="code"><span>npm install something-with-a-very-long-name --save-dev</span></pre>
+    <span class="tag">Limited edition collector item with a very long name</span>
+    <p class="legal">Prices include VAT. Offer valid while stocks last.</p>
+    <label>Search <input class="search" type="search" placeholder="Search products"></label>
+  </main>
+  <div class="cookies" role="dialog" aria-label="Cookies">
+    <p>We use cookies to improve your experience.</p>
+    <button>Accept all</button>
+  </div>
+  <script>
+    // image-oversize: a 2400px wide PNG shown 80px wide.
+    const canvas = document.createElement("canvas");
+    canvas.width = 2400;
+    canvas.height = 1600;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#7c3aed";
+    ctx.fillRect(0, 0, 2400, 1600);
+    const photo = new Image();
+    photo.className = "thumb";
+    photo.alt = "Large product photo";
+    photo.src = canvas.toDataURL("image/png");
+    document.querySelector("main").appendChild(photo);
+  </script>
+</body>
+</html>

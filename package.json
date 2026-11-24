@@ -3,17 +3,26 @@
   "private": true,
   "license": "MIT",
   "version": "0.4.0",
-  "description": "Browser extension: view any website inside realistic phone and tablet frames, with screenshots and screen recording.",
+  "description": "Browser extension: view any website inside realistic phone and tablet frames, with screenshots and screen recording. Plus the phone-sim CLI: a headless responsive-layout check for AI agents.",
   "type": "module",
+  "bin": {
+    "phone-sim": "dist-cli/phone-sim.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite build --watch --mode development",
-    "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "build": "pnpm typecheck && vite build && pnpm build:cli",
+    "build:cli": "vite build -c vite.cli.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.cli.json",
+    "test": "vitest run",
+    "check:fixtures": "node scripts/check-fixtures.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.4.0",
     "@hugeicons/react": "^1.1.10",
+    "playwright": "^1.64.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.6.7",
@@ -22,6 +31,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",
     "@types/chrome": "^0.3.7",
+    "@types/node": "^20.19.43",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
