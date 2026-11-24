@@ -1,35 +1,37 @@
 @import "tailwindcss";
 
-/* Dark by default; the surrounding UI follows prefers-color-scheme. */
+/* Dark by default; Settings switches to light (data-theme on <html>). Flat, crisp, zero drop shadows. */
 @theme {
-  --color-app: #0d0f14;
-  --color-panel: #161920;
-  --color-raised: #20242e;
-  --color-line: #272c37;
-  --color-ink: #e8eaef;
-  --color-muted: #8a92a3;
-  --color-accent: #7d95ff;
-  --color-accent-ink: #0d0f14;
-  --color-danger: #ff5c5c;
+  --color-stage: #1b1f25;
+  --color-glass: #282d36;
+  --color-glass-line: rgba(255, 255, 255, 0.08);
+  --color-panel: #232830;
+  --color-raised: rgba(255, 255, 255, 0.085);
+  --color-line: rgba(255, 255, 255, 0.09);
+  --color-ink: #f0f2f6;
+  --color-muted: #9199a7;
+  --color-accent: #2563eb;
+  --color-accent-ink: #ffffff;
+  --color-danger: #ff4d4f;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-app: #eef0f4;
-    --color-panel: #ffffff;
-    --color-raised: #e4e7ee;
-    --color-line: #d9dde5;
-    --color-ink: #151922;
-    --color-muted: #5e6677;
-    --color-accent: #3d55d6;
-    --color-accent-ink: #ffffff;
-    --color-danger: #d93636;
-  }
+:root {
+  color-scheme: dark;
 }
 
-:root {
-  color-scheme: dark light;
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-stage: #eef0f4;
+  --color-glass: #ffffff;
+  --color-glass-line: rgba(15, 23, 42, 0.09);
+  --color-panel: #ffffff;
+  --color-raised: rgba(15, 23, 42, 0.06);
+  --color-line: rgba(15, 23, 42, 0.09);
+  --color-ink: #131720;
+  --color-muted: #5d6574;
+  --color-accent: #2563eb;
+  --color-danger: #e5383b;
 }
 
 html,
@@ -40,25 +42,76 @@ body,
 
 body {
   margin: 0;
-  background: var(--color-app);
+  background: var(--color-stage);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Soft spotlight and dot grid behind the device. */
+/* Smooth matte stage without drop shadows or blotchy glows. */
 .stage {
-  background-color: var(--color-app);
-  background-image:
-    radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--color-accent) 9%, transparent), transparent 60%),
-    radial-gradient(color-mix(in srgb, var(--color-muted) 22%, transparent) 1px, transparent 1px);
-  background-size: auto, 22px 22px;
+  background: var(--color-stage);
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Soft horizontal fade at the right edge of scrollable chip rows. */
 button:focus-visible,
-[role="option"]:focus-visible {
+[role="option"]:focus-visible,
+select:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+.phone-sim-pop {
+  animation: phone-sim-pop 120ms ease-out;
+}
+
+.phone-sim-drawer {
+  animation: phone-sim-drawer 130ms ease-out;
+}
+
+.phone-sim-fade {
+  animation: phone-sim-fade 140ms ease-out;
+}
+
+.phone-sim-tip {
+  animation: phone-sim-tip 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes phone-sim-tip {
+  from {
+    opacity: 0;
+    scale: 0.94;
+    translate: var(--tip-dx, 0px) var(--tip-dy, 0px);
+  }
+}
+
+@keyframes phone-sim-pop {
+  from {
+    opacity: 0;
+    scale: 0.97;
+    translate: 0 -4px;
+  }
+}
+
+@keyframes phone-sim-drawer {
+  from {
+    opacity: 0;
+    translate: -6px 0;
+  }
+}
+
+@keyframes phone-sim-fade {
+  from {
+    opacity: 0;
+  }
 }
 
 @keyframes phone-sim-progress {

@@ -9,11 +9,13 @@ import {
   brands,
   devices,
   filterDevices,
+  findDevice,
   formatScreen,
   getDevice,
   groupByBrand,
   resolveDevice,
   sortNewestFirst,
+  withFinish,
 } from "./index";
 
 const catalog = [...appleDevices, ...samsungDevices, ...googleDevices, ...otherDevices];
@@ -45,7 +47,31 @@ describe("device catalog", () => {
       expect(device.dpr, device.id).toBeGreaterThanOrEqual(1);
       expect(device.dpr, device.id).toBeLessThanOrEqual(5);
       expect(device.frame.screenRadius * 2, device.id).toBeLessThan(device.screen.width);
+      if (device.frame.rim !== undefined) expect(device.frame.rim, device.id).toBeLessThan(device.frame.bezel);
     }
+  });
+
+  it("lists the base colour as the first finish", () => {
+    for (const device of devices) {
+      const [first] = device.frame.finishes ?? [];
+      if (first) expect(first.color.toLowerCase(), device.id).toBe(device.frame.color.toLowerCase());
+      const names = (device.frame.finishes ?? []).map((finish) => finish.name);
+      expect(new Set(names).size, device.id).toBe(names.length);
+    }
+  });
+
+  it("applies a saved finish and ignores unknown ones", () => {
+    const device = resolveDevice("iphone-16-pro");
+    expect(withFinish(device, "Desert Titanium").frame.color).toBe("#bfae98");
+    expect(withFinish(device, "Hot Pink")).toBe(device);
+    expect(withFinish(device, undefined)).toBe(device);
+  });
+
+  it("finds custom devices after the catalog", () => {
+    const custom = { ...resolveDevice("pixel-8"), id: "custom-test-1", brand: "Custom" };
+    expect(findDevice("custom-test-1", [custom])).toBe(custom);
+    expect(findDevice("pixel-8", [custom])?.brand).toBe("Google");
+    expect(findDevice("custom-missing", [custom])).toBeUndefined();
   });
 
   it("matches platform to brand family", () => {

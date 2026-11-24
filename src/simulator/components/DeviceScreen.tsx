@@ -3,6 +3,8 @@ import { buildFrameEnv, detectChromeMajor } from "@/devices/userAgent";
 import type { Device } from "@/schemas/device";
 import { frameMessageSchema } from "@/shared/messages";
 import { useSimulatorStore } from "@/stores/simulator";
+import { broadcastScroll, isSlotFrameWindow, notifyAutoScrollDone, registerFrame, sendFrameConfig, sendSpaNav, unregisterFrame } from "../frameBridge";
+import type { Tone } from "./frame/tone";
 import { EmptyState, PreparingState, UnreachableNotice } from "./ScreenStates";
 
 /** How long after `load` the site has to have reported in before it counts as unreachable. */
@@ -24,45 +26,77 @@ const SANDBOX = [
 
 const chromeMajor = detectChromeMajor(navigator);
 
-function SiteFrame({ device, url }: { device: Device; url: string }) {
+function SiteFrame({ slotId, device, url }: { slotId: string; device: Device; url: string }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const reportedRef = useRef(false);
   const timerRef = useRef(0);
   const [noticeDismissed, setNoticeDismissed] = useState(false);
-  const frameStatus = useSimulatorStore((state) => state.frameStatus);
-  const name = useMemo(() => JSON.stringify(buildFrameEnv(device, chromeMajor, chrome.runtime.id)), [device]);
+  const frameStatus = useSimulatorStore((state) => state.slotRuntime[slotId]?.frameStatus ?? "loading");
+  const touchCursor = useSimulatorStore((state) => state.touchCursor);
+  const syncScroll = useSimulatorStore((state) => state.syncScroll);
+  const name = useMemo(
+    () => JSON.stringify(buildFrameEnv(device, chromeMajor, chrome.runtime.id, touchCursor, syncScroll)),
+    [device, touchCursor, syncScroll],
+  );
 
   useEffect(() => {
-    const { setFrameStatus, reportFrameHref } = useSimulatorStore.getState();
-    setFrameStatus("loading");
+    const frame = iframeRef.current;
+    if (!frame) return;
+    const store = useSimulatorStore.getState();
+    registerFrame(slotId, frame);
+    store.resetSlotHistory(slotId);
+    store.setSlotFrameStatus(slotId, "loading");
+
     const onMessage = (event: MessageEvent<unknown>): void => {
-      if (!iframeRef.current || event.source !== iframeRef.current.contentWindow) return;
+      if (!isSlotFrameWindow(slotId, event.source) || event.source !== frame.contentWindow) return;
       const parsed = frameMessageSchema.safeParse(event.data);
       if (!parsed.success) return;
+      const state = useSimulatorStore.getState();
+      if (parsed.data.kind === "focus") {
+        state.setActiveSlot(slotId);
+        return;
+      }
+      if (parsed.data.kind === "auto-scroll-done") {
+        notifyAutoScrollDone(slotId);
+        return;
+      }
+      if (parsed.data.kind === "scroll") {
+        if (state.syncScroll) broadcastScroll(slotId, parsed.data.ratioX, parsed.data.ratioY);
+        return;
+      }
       reportedRef.current = true;
-      reportFrameHref(parsed.data.href);
+      const softTargets = state.reportFrame(slotId, parsed.data.href, parsed.data.nav);
+      for (const targetId of softTargets) {
+        sendSpaNav(targetId, parsed.data.href, parsed.data.nav === "replace");
+      }
+      if (parsed.data.nav === "load") sendFrameConfig(slotId, state.touchCursor, state.syncScroll);
     };
+
     window.addEventListener("message", onMessage);
     return () => {
       window.removeEventListener("message", onMessage);
       window.clearTimeout(timerRef.current);
+      unregisterFrame(slotId, frame);
     };
-  }, []);
+  }, [slotId]);
+
+  useEffect(() => {
+    sendFrameConfig(slotId, touchCursor, syncScroll);
+  }, [slotId, touchCursor, syncScroll]);
 
   const handleLoad = (): void => {
     window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => {
       const reported = reportedRef.current;
-      // The next document in this frame must report again.
       reportedRef.current = false;
       if (!reported) setNoticeDismissed(false);
-      useSimulatorStore.getState().setFrameStatus(reported ? "loaded" : "unreachable");
+      useSimulatorStore.getState().setSlotFrameStatus(slotId, reported ? "loaded" : "unreachable");
     }, REPORT_GRACE_MS);
   };
 
   const openInTab = (): void => {
-    const { frameHref } = useSimulatorStore.getState();
-    void chrome.tabs.create({ url: frameHref ?? url });
+    const href = useSimulatorStore.getState().slotRuntime[slotId]?.frameHref;
+    void chrome.tabs.create({ url: href ?? url });
   };
 
   return (
@@ -71,20 +105,20 @@ function SiteFrame({ device, url }: { device: Device; url: string }) {
         ref={iframeRef}
         name={name}
         src={url}
-        title="Simulated website"
+        title={`${device.name} simulated website`}
         className="block h-full w-full border-0 bg-white"
         sandbox={SANDBOX}
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         onLoad={handleLoad}
       />
       {frameStatus === "loading" && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-[#4a5bd4]/15">
-          <div className="h-full w-1/3 animate-[phone-sim-progress_1.1s_ease-in-out_infinite] bg-[#4a5bd4]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-black/15">
+          <div className="h-full w-1/3 animate-[phone-sim-progress_1.1s_ease-in-out_infinite] bg-[#2563eb]" />
         </div>
       )}
       {frameStatus === "unreachable" && !noticeDismissed && (
         <UnreachableNotice
-          onRetry={() => useSimulatorStore.getState().reload()}
+          onRetry={() => useSimulatorStore.getState().reload(slotId)}
           onOpenInTab={openInTab}
           onDismiss={() => setNoticeDismissed(true)}
         />
@@ -93,14 +127,20 @@ function SiteFrame({ device, url }: { device: Device; url: string }) {
   );
 }
 
-/** Content of the screen below the status bar: the site, or a state message. */
-export function DeviceScreen({ device }: { device: Device }) {
-  const url = useSimulatorStore((state) => state.url);
-  const rulesDeviceId = useSimulatorStore((state) => state.rulesDeviceId);
-  const reloadNonce = useSimulatorStore((state) => state.reloadNonce);
+/** Content of one device screen between the bars: the site, or a state message. */
+export function DeviceScreen({ slotId, device, tone }: { slotId: string; device: Device; tone: Tone }) {
+  const slotUrl = useSimulatorStore((state) => state.slotRuntime[slotId]?.url ?? state.url);
+  const rulesReady = useSimulatorStore((state) => state.rulesReady);
+  const reloadNonce = useSimulatorStore((state) => state.slotRuntime[slotId]?.reloadNonce ?? 0);
 
-  if (!url) return <EmptyState />;
-  if (rulesDeviceId !== device.id) return <PreparingState />;
-  // A new key recreates the iframe, so a device change gets a fresh window.name and headers.
-  return <SiteFrame key={`${device.id}:${reloadNonce}`} device={device} url={url} />;
+  if (!slotUrl) return <EmptyState tone={tone} />;
+  if (!rulesReady) return <PreparingState tone={tone} />;
+  return (
+    <SiteFrame
+      key={`${slotId}:${device.id}:${device.platform}:${device.kind}:${reloadNonce}`}
+      slotId={slotId}
+      device={device}
+      url={slotUrl}
+    />
+  );
 }

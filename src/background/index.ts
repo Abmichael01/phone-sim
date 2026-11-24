@@ -1,6 +1,8 @@
-import { getDevice } from "@/devices";
+import { findDevice } from "@/devices";
 import { detectChromeMajor } from "@/devices/userAgent";
+import { CUSTOM_ID_PREFIX } from "@/schemas/customDevice";
 import type { Device } from "@/schemas/device";
+import { loadCustomDevices } from "@/shared/customDevices";
 import { backgroundRequestSchema, type BackgroundRequest, type BackgroundResponse } from "@/shared/messages";
 import { isWebUrl, SIMULATOR_PAGE, simulatorPagePath } from "@/shared/url";
 import { allocateRuleIds, buildTabRules, tabRuleIds } from "./rules";
@@ -107,7 +109,8 @@ async function handleRequest(request: BackgroundRequest, sender: chrome.runtime.
   if (tabId === undefined || !isSimulatorUrl(sender.url)) {
     return { ok: false, error: "Only a Phone Sim tab can apply device settings." };
   }
-  const device = getDevice(request.deviceId);
+  const customDevices = request.deviceId.startsWith(CUSTOM_ID_PREFIX) ? await loadCustomDevices() : [];
+  const device = findDevice(request.deviceId, customDevices);
   if (!device) return { ok: false, error: `Unknown device "${request.deviceId}".` };
   await applyTabRules(tabId, device);
   return { ok: true };

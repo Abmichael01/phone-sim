@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Phone Sim",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "View any website inside realistic phone, tablet and foldable frames, with screenshots and screen recording.",
   "minimum_chrome_version": "116",
   "icons": {

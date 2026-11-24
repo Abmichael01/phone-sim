@@ -28,14 +28,62 @@ export async function requestApplyDevice(deviceId: string): Promise<BackgroundRe
   return parsed.success ? parsed.data : { ok: false, error: "The extension background did not answer." };
 }
 
-// Framed site (mobile-env.js) -> simulator page (window.postMessage)
+// Framed site (mobile-env.js) <-> simulator page (window.postMessage).
+// mobile-env.ts cannot import, so it repeats these tags and shapes: keep both in sync.
 
-/** mobile-env.ts posts this exact tag; it cannot import, so keep both in sync. */
 export const FRAME_MESSAGE_SOURCE = "phone-sim:frame";
+export const PARENT_MESSAGE_SOURCE = "phone-sim:parent";
 
-export const frameMessageSchema = z.object({
+/** How the frame got to its current URL: a new document, history push/replace, or back/forward/hash. */
+export const frameNavSchema = z.enum(["load", "push", "replace", "pop"]);
+export type FrameNav = z.infer<typeof frameNavSchema>;
+
+export const frameNavMessageSchema = z.object({
   source: z.literal(FRAME_MESSAGE_SOURCE),
+  kind: z.literal("nav"),
   href: z.url(),
+  nav: frameNavSchema,
 });
 
+export const frameScrollMessageSchema = z.object({
+  source: z.literal(FRAME_MESSAGE_SOURCE),
+  kind: z.literal("scroll"),
+  ratioX: z.number().min(0).max(1),
+  ratioY: z.number().min(0).max(1),
+});
+
+export const frameFocusMessageSchema = z.object({
+  source: z.literal(FRAME_MESSAGE_SOURCE),
+  kind: z.literal("focus"),
+});
+
+export const frameAutoScrollDoneSchema = z.object({
+  source: z.literal(FRAME_MESSAGE_SOURCE),
+  kind: z.literal("auto-scroll-done"),
+});
+
+export const frameMessageSchema = z.discriminatedUnion("kind", [
+  frameNavMessageSchema,
+  frameScrollMessageSchema,
+  frameFocusMessageSchema,
+  frameAutoScrollDoneSchema,
+]);
+
 export type FrameMessage = z.infer<typeof frameMessageSchema>;
+
+/** Commands the simulator sends into the frame. */
+export type ParentMessage =
+  | { source: typeof PARENT_MESSAGE_SOURCE; cmd: "back" }
+  | { source: typeof PARENT_MESSAGE_SOURCE; cmd: "forward" }
+  | { source: typeof PARENT_MESSAGE_SOURCE; cmd: "config"; touchCursor: boolean; syncScroll: boolean }
+  | { source: typeof PARENT_MESSAGE_SOURCE; cmd: "scroll"; ratioX: number; ratioY: number }
+  | { source: typeof PARENT_MESSAGE_SOURCE; cmd: "spa-nav"; href: string; replace: boolean }
+  | {
+      source: typeof PARENT_MESSAGE_SOURCE;
+      cmd: "auto-scroll-start";
+      speed: number;
+      fromTop: boolean;
+      delayMs: number;
+      stopAtBottom: boolean;
+    }
+  | { source: typeof PARENT_MESSAGE_SOURCE; cmd: "auto-scroll-stop" };

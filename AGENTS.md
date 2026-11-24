@@ -457,7 +457,7 @@ Project requirements may extend this guide. Add them below or in a nearer nested
 
 **Phone Sim** is a Manifest V3 browser extension (Chromium: Opera GX, Chrome, Edge, Brave) that opens
 any website inside realistic phone, tablet and foldable frames, with a device picker, rotation,
-screenshots and screen recording. Personal tool; free, no accounts, no paywall, no tracking.
+screenshots and screen recording. Open source (MIT); free, no accounts, no paywall, no tracking.
 
 - **Scope:** frontend-only browser extension. No backend, no server, no network calls of its own.
 - **Stack:** TypeScript strict, React 19, Tailwind CSS v4 (`@tailwindcss/vite`), Zustand (UI state),

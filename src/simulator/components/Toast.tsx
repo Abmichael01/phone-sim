@@ -19,7 +19,7 @@ export function Toast() {
     <div className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4">
       <div
         role={toast.tone === "error" ? "alert" : "status"}
-        className={`pointer-events-auto max-w-md rounded-xl border px-4 py-2.5 text-[13px] shadow-xl ${
+        className={`pointer-events-auto max-w-md rounded-full border px-4 py-2 text-[13px] ${
           toast.tone === "error" ? "border-danger/40 bg-panel text-ink" : "border-line bg-panel text-ink"
         }`}
         onClick={() => useSimulatorStore.getState().dismissToast(toast.id)}

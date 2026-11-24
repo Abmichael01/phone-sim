@@ -107,9 +107,19 @@ export interface FrameEnv {
   mobile: boolean;
   touch: true;
   osVersion: string;
+  /** Show the finger cursor and scroll by dragging. */
+  cursor: boolean;
+  /** Report scroll position so sibling devices on stage scroll together. */
+  syncScroll: boolean;
 }
 
-export function buildFrameEnv(device: Device, chromeMajor: number, extensionId: string): FrameEnv {
+export function buildFrameEnv(
+  device: Device,
+  chromeMajor: number,
+  extensionId: string,
+  touchCursor: boolean,
+  syncScroll = true,
+): FrameEnv {
   return {
     phoneSim: 1,
     ext: extensionId,
@@ -118,5 +128,7 @@ export function buildFrameEnv(device: Device, chromeMajor: number, extensionId: 
     mobile: isMobileDevice(device),
     touch: true,
     osVersion: device.osVersion,
+    cursor: touchCursor,
+    syncScroll,
   };
 }
