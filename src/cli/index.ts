@@ -12,6 +12,7 @@ import { formatHuman, pickStyle } from "./report";
 import { CheckError, runCheck, writeReportFiles } from "./run";
 import { httpProbe, openWithSystem } from "./system";
 import { DEV_PORTS, findDevServer, normalizeTarget } from "./target";
+import { RUN } from "./command";
 
 /** Parallel device pages in one browser. */
 const CONCURRENCY = 4;
@@ -29,7 +30,7 @@ function fail(error: CheckError, debug: boolean): number {
 async function resolveUrl(input: string | undefined): Promise<string> {
   if (input !== undefined) {
     const target = normalizeTarget(input, process.cwd(), homedir());
-    if (!target.ok) throw new CheckError(target.message, "npx phone-sim check http://localhost:3000");
+    if (!target.ok) throw new CheckError(target.message, `${RUN} check http://localhost:3000`);
     if (target.kind === "file" && !existsSync(fileURLToPath(target.url))) {
       throw new CheckError(`File not found: ${fileURLToPath(target.url)}`, "Check the path, then run the command again.");
     }
@@ -40,7 +41,7 @@ async function resolveUrl(input: string | undefined): Promise<string> {
   if (port === null) {
     throw new CheckError(
       `No dev server is running on ports ${DEV_PORTS.join(", ")}.`,
-      "Start your dev server, or give the URL: npx phone-sim check http://localhost:<port>",
+      `Start your dev server, or give the URL: ${RUN} check http://localhost:<port>`,
     );
   }
   const url = `http://localhost:${port}/`;
@@ -51,7 +52,7 @@ async function resolveUrl(input: string | undefined): Promise<string> {
 async function check(options: CheckOptions): Promise<number> {
   const selection = selectDevices({ devices: options.devices, preset: options.preset }, devices);
   if (!selection.ok) {
-    throw new CheckError(selection.message, "npx phone-sim devices --search <name>   (lists every device id)");
+    throw new CheckError(selection.message, `${RUN} devices --search <name>   (lists every device id)`);
   }
   const url = await resolveUrl(options.url);
   const outDir = resolve(process.cwd(), options.out);
@@ -106,7 +107,7 @@ function listDevices(options: DevicesOptions): number {
   }
   if (matches.length === 0) {
     stderr(`No device matches "${options.search ?? ""}".`);
-    stderr("  Next: npx phone-sim devices   (lists every device)");
+    stderr(`  Next: ${RUN} devices   (lists every device)`);
     return 2;
   }
   const idWidth = Math.max(...matches.map((device) => device.id.length));
@@ -114,7 +115,7 @@ function listDevices(options: DevicesOptions): number {
   for (const device of matches) {
     process.stdout.write(`${device.id.padEnd(idWidth)}  ${device.name.padEnd(nameWidth)}  ${formatScreen(device).padEnd(16)}  ${device.platform}\n`);
   }
-  stderr(`\n${matches.length} devices. Use ids with: npx phone-sim check <url> --devices ${matches[0]?.id ?? "iphone-16-pro"}`);
+  stderr(`\n${matches.length} devices. Use ids with: ${RUN} check <url> --devices ${matches[0]?.id ?? "iphone-16-pro"}`);
   return 0;
 }
 
@@ -128,10 +129,10 @@ function init(options: InitOptions): number {
     process.stdout.write(`  ${change.file}: ${action} (${change.description})\n`);
   }
   if (changed.length === 0) {
-    process.stdout.write("Already set up. AI agents here will run: npx phone-sim check --json\n");
+    process.stdout.write(`Already set up. AI agents here will run: ${RUN} check --json\n`);
   } else {
     process.stdout.write(`${verb} ${changed.length} file${changed.length === 1 ? "" : "s"} in ${dir}.\n`);
-    if (options.dryRun) process.stdout.write("Run without --dry-run to apply: npx phone-sim init\n");
+    if (options.dryRun) process.stdout.write(`Run without --dry-run to apply: ${RUN} init\n`);
   }
   return 0;
 }
@@ -139,7 +140,7 @@ function init(options: InitOptions): number {
 async function main(argv: readonly string[]): Promise<number> {
   const parsed = parseCli(argv);
   if (!parsed.ok) {
-    return fail(new CheckError(parsed.message, "npx phone-sim --help"), parsed.debug);
+    return fail(new CheckError(parsed.message, `${RUN} --help`), parsed.debug);
   }
   const { value } = parsed;
   const debug = "options" in value && "debug" in value.options ? value.options.debug : false;

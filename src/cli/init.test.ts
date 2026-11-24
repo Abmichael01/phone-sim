@@ -40,7 +40,7 @@ describe("runInit", () => {
       { file: "AGENTS.md", action: "created", description: 'added the "Responsive check" section' },
       { file: ".gitignore", action: "created", description: "ignores phone-sim-report/" },
     ]);
-    expect(read("AGENTS.md")).toContain("npx phone-sim check <url> --json");
+    expect(read("AGENTS.md")).toContain("npx -y github:Abmichael01/phone-sim check <url> --json");
     expect(read(".gitignore")).toBe("phone-sim-report/\n");
   });
 

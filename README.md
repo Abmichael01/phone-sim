@@ -1,9 +1,41 @@
 # Phone Sim
 
-A free Chromium extension (Opera GX, Chrome, Edge, Brave) that opens any website inside realistic
-phone, tablet and foldable frames. No accounts, no tracking, no network calls of its own.
+See any website on real phone and tablet screens, and let your AI agent fix what breaks.
 
-## Features
+Phone Sim has two parts:
+
+- **An AI skill + checker** that loads your page on real device sizes, finds what breaks
+  (sideways scrolling, tiny buttons, tiny text, iPhone input zoom, notch overlap…) and gives your
+  AI agent the exact element and fix. Works with Claude Code, Codex, Cursor, Gemini and others.
+- **A browser extension** (Opera GX, Chrome, Edge, Brave) that shows any site inside realistic
+  phone, tablet and foldable frames, with screenshots and screen recording.
+
+## Quick start: give your AI agent the skill
+
+```sh
+npx skills add Abmichael01/phone-sim
+```
+
+That's it. After UI changes your agent checks the page on phones, looks at the screenshots, fixes
+the problems and checks again until it's clean. You can also just ask it: *"check this page on
+phones"*.
+
+Or run the checker yourself (with your dev server running; it finds it):
+
+```sh
+npx -y github:Abmichael01/phone-sim check
+```
+
+You get a short list of problems in the terminal, and in `phone-sim-report/` a screenshot per
+device with numbered boxes on each problem, plus `report.html` with every device side by side.
+
+To make every agent in a repo run it after UI changes, run this once in the repo:
+
+```sh
+npx -y github:Abmichael01/phone-sim init
+```
+
+## Browser extension features
 
 - **Multi-device side-by-side canvas** — Opens with a Phone + Tablet (`iPhone 16 Pro` + `iPad Pro 11" (M4)`)
   at the same time, remembers your workspace, and lets you place up to **4 devices** side by side with
@@ -61,12 +93,13 @@ catalog, finds layout problems, and saves annotated, framed screenshots plus a r
 agent can act on. Nothing to set up: the first run downloads a headless browser by itself.
 
 ```sh
-npx phone-sim check                    # finds your dev server (3000, 5173, 4321, 8080, 8000, 4200, 3001)
-npx phone-sim check localhost:5173     # a URL, a port (3000) or an .html file
-npx phone-sim init                     # tells AI agents in this repo to run the check
+npx -y github:Abmichael01/phone-sim check                  # finds your dev server (3000, 5173, 4321, 8080, 8000, 4200, 3001)
+npx -y github:Abmichael01/phone-sim check localhost:5173   # a URL, a port (3000) or an .html file
+npx -y github:Abmichael01/phone-sim init                   # tells AI agents in this repo to run the check
 ```
 
-From this repo (not published yet): `pnpm build:cli`, then `node dist-cli/phone-sim.js check …`.
+It runs straight from GitHub; nothing to install. Inside this repo you can also run
+`node dist-cli/phone-sim.js check …`.
 
 The output is kept short. Each issue is listed once: issues found on every device come first, then
 issues a few devices share, then what is specific to one device. It shows at most 10 issues per
@@ -94,7 +127,7 @@ and warnings only, at most 25 per device, with an `omitted` count for what was l
 | `--preset common` | iPhone SE, iPhone 16 Pro, Galaxy A16, Pixel 9, iPad mini (default) |
 | `--preset phones` | iPhone SE, iPhone 16 Pro, iPhone 17 Pro Max, Galaxy A16, Galaxy S25 Ultra, Pixel 9 |
 | `--preset all-sizes` | one device per screen-width class, from small phones to large tablets |
-| `--devices <id,id>` | exact devices; list ids with `phone-sim devices [--search <text>] [--json]` |
+| `--devices <id,id>` | exact devices; list ids with `npx -y github:Abmichael01/phone-sim devices --search <text>` |
 | `--landscape` | also check every device turned sideways |
 | `--full-page` | screenshot the whole page instead of the first screen |
 | `--json` | JSON report on stdout and nothing else (progress goes to stderr) |

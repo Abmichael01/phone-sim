@@ -2,6 +2,7 @@ import { basename } from "node:path";
 import { countIssues, type Counts, type DeviceReport, type Issue, type Report, type Summary } from "./issues";
 import { SEVERITY_COLORS } from "./overlay";
 import type { Severity } from "./rules";
+import { RUN } from "./command";
 
 /** Pure formatting of a finished report: terminal text, Markdown and a self-contained HTML page. */
 
@@ -178,7 +179,7 @@ export function formatHuman(report: Report, style: Style = PLAIN, options: Human
   const failedStatus = report.devices.find((device) => device.status !== null && device.status >= 400)?.status;
   if (failedStatus) {
     lines.push(style.yellow(`${SYMBOLS.warn} The page answered HTTP ${failedStatus}, so this checked an error page.`));
-    lines.push(style.dim(`  Fix the page or the URL, then run: npx phone-sim check ${report.url}`));
+    lines.push(style.dim(`  Fix the page or the URL, then run: ${RUN} check ${report.url}`));
   }
   if (isClean(summary)) {
     lines.push(style.green(`✓ No responsive problems found on ${plural(count, "device", "devices")}`));

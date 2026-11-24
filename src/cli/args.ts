@@ -1,6 +1,7 @@
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { PRESET_NAMES } from "./devicesSelect";
+import { RUN } from "./command";
 
 export const DEFAULT_OUT_DIR = "phone-sim-report";
 
@@ -180,9 +181,12 @@ export function parseCli(argv: readonly string[]): ParseResult {
 
 export const HELP_TEXT = `phone-sim: check a web page on real phone and tablet screen sizes
 
-  npx phone-sim check                   find your local dev server and check it
-  npx phone-sim check localhost:5173    check a URL, a port (3000) or an .html file
-  npx phone-sim init                    tell AI agents in this repo to run the check
+  ${RUN} check
+      find your local dev server and check it
+  ${RUN} check localhost:5173
+      check a URL, a port (3000) or an .html file
+  ${RUN} init
+      tell AI agents in this repo to run the check
 
 Check options
   --preset <name>       common (default), phones or all-sizes

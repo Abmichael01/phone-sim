@@ -40,13 +40,13 @@ describe("describeLoadError", () => {
   it("explains a server that is not running", () => {
     const error = describeLoadError(new Error("page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/"), url, 30000);
     expect(error.message).toBe("Nothing is answering at http://localhost:3000/.");
-    expect(error.next).toBe("Start your dev server, then run: npx phone-sim check http://localhost:3000/");
+    expect(error.next).toBe("Start your dev server, then run: npx -y github:Abmichael01/phone-sim check http://localhost:3000/");
   });
 
   it("suggests a longer timeout", () => {
     const error = describeLoadError(new Error("page.goto: Timeout 30000ms exceeded."), url, 30000);
     expect(error.message).toBe("The page did not finish loading within 30s.");
-    expect(error.next).toBe("npx phone-sim check http://localhost:3000/ --timeout 60000");
+    expect(error.next).toBe("npx -y github:Abmichael01/phone-sim check http://localhost:3000/ --timeout 60000");
   });
 
   it("handles unknown hosts, missing files and anything else", () => {
