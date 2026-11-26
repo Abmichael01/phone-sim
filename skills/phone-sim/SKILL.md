@@ -72,3 +72,13 @@ screen height is the full display (real browsers subtract their toolbars; widths
 
 To make every AI agent in a repo use this automatically, run
 `npx -y github:Abmichael01/phone-sim init` once (adds a short section to AGENTS.md).
+
+## Install the browser extension for the user
+
+When the user wants the Phone Sim browser extension (not the checker), run
+`npx -y github:Abmichael01/phone-sim extension --json`. It downloads the latest release into
+`~/phone-sim-extension` (or `--dir <path>`) and prints `{version, dir, steps}`. Then tell the user
+the steps in plain words with the exact `dir` path. Browsers do not let an agent click
+"Load unpacked", so the user must do those clicks (open `chrome://extensions`, turn on Developer
+mode, Load unpacked, pick the folder). To update, run the same command again and ask the user to
+click the reload button on Phone Sim in the extensions page.

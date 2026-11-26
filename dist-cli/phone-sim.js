@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import { createRequire } from "node:module";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { request } from "node:http";
+import { createHash } from "node:crypto";
+import { createRequire as createRequire$1 } from "module";
 // node_modules/.pnpm/zod@4.6.7/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
 	const numericValues = Object.values(entries).filter((v) => typeof v === "number");
@@ -543,7 +545,7 @@ function constantCatch(value) {
 	return fn;
 }
 // node_modules/.pnpm/zod@4.6.7/node_modules/zod/v4/core/core.js
-var _a$1;
+var _a$2;
 /** A special constant with type `never` */
 var NEVER = /*@__PURE__*/ Object.freeze({ status: "aborted" });
 var _zodDesc = {
@@ -644,7 +646,7 @@ var $ZodEncodeError = class extends Error {
 		this.name = "ZodEncodeError";
 	}
 };
-(_a$1 = globalThis).__zod_globalConfig ?? (_a$1.__zod_globalConfig = {});
+(_a$2 = globalThis).__zod_globalConfig ?? (_a$2.__zod_globalConfig = {});
 var globalConfig = globalThis.__zod_globalConfig;
 function config(newConfig) {
 	if (newConfig) Object.assign(globalConfig, newConfig);
@@ -2988,7 +2990,7 @@ function en_default() {
 	return { localeError: error() };
 }
 // node_modules/.pnpm/zod@4.6.7/node_modules/zod/v4/core/registries.js
-var _a;
+var _a$1;
 var $ZodRegistry = class {
 	constructor() {
 		this._map = /* @__PURE__ */ new WeakMap();
@@ -3031,7 +3033,7 @@ var $ZodRegistry = class {
 function registry() {
 	return new $ZodRegistry();
 }
-(_a = globalThis).__zod_globalRegistry ?? (_a.__zod_globalRegistry = registry());
+(_a$1 = globalThis).__zod_globalRegistry ?? (_a$1.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
 // node_modules/.pnpm/zod@4.6.7/node_modules/zod/v4/core/api.js
 function snapshotChecks(def) {
@@ -10367,6 +10369,26 @@ var INIT_OPTIONS = {
 		default: false
 	}
 };
+var EXTENSION_OPTIONS = {
+	dir: { type: "string" },
+	json: {
+		type: "boolean",
+		default: false
+	},
+	open: {
+		type: "boolean",
+		default: false
+	},
+	debug: {
+		type: "boolean",
+		default: false
+	},
+	help: {
+		type: "boolean",
+		short: "h",
+		default: false
+	}
+};
 /** Node's parseArgs messages are long; keep just the option name. */
 function friendlyParseError(error) {
 	const text = error instanceof Error ? error.message : String(error);
@@ -10441,6 +10463,35 @@ function parseCli(argv) {
 				}
 			};
 		}
+		if (first === "extension") {
+			const { values } = parseArgs({
+				args: [...rest],
+				options: EXTENSION_OPTIONS,
+				allowPositionals: false,
+				strict: true
+			});
+			if (values.help) return {
+				ok: true,
+				value: { command: "help" }
+			};
+			if (values.dir !== void 0 && values.dir.trim() === "") return {
+				ok: false,
+				message: "--dir needs a folder path.",
+				debug
+			};
+			return {
+				ok: true,
+				value: {
+					command: "extension",
+					options: {
+						dir: values.dir,
+						json: values.json,
+						open: values.open,
+						debug: values.debug
+					}
+				}
+			};
+		}
 		let checkArgs;
 		if (first === "check") checkArgs = [...rest];
 		else if (first.startsWith("-") || looksLikeTarget(first)) checkArgs = [...argv];
@@ -10509,6 +10560,8 @@ var HELP_TEXT = `phone-sim: check a web page on real phone and tablet screen siz
       check a URL, a port (3000) or an .html file
   ${RUN} init
       tell AI agents in this repo to run the check
+  ${RUN} extension
+      download and unpack the browser extension (no build needed)
 
 Check options
   --preset <name>       common (default), phones or all-sizes
@@ -10529,6 +10582,9 @@ Check options
 Other commands
   phone-sim devices [--search <text>] [--json]   list device ids
   phone-sim init [--dry-run]                     add the check to AGENTS.md
+  phone-sim extension [--dir <path>] [--json] [--open]
+      get the latest browser extension into ~/phone-sim-extension (or --dir),
+      then print the 3 clicks to load it. --json prints {version, dir, steps}.
 
 Exit codes: 0 no problems, 1 problems found, 2 could not run the check.`;
 // src/cli/issues.ts
@@ -12541,6 +12597,703 @@ async function writeReportFiles(report, cap) {
 	await writeFile(full.reportHtml, toHtml(full));
 	return capped;
 }
+var RELEASES_PAGE = "https://github.com/Abmichael01/phone-sim/releases/latest";
+var ASSET_PATTERN = /^phone-sim-extension-v[\d.]+\.zip$/;
+var EXTENSION_NAME = "Phone Sim";
+var isRecord = (value) => typeof value === "object" && value !== null;
+/** Finds the extension zip in the "latest release" JSON from the GitHub API. */
+function pickAsset(release) {
+	if (!isRecord(release) || !Array.isArray(release.assets)) return {
+		ok: false,
+		reason: "invalid"
+	};
+	for (const item of release.assets) {
+		if (!isRecord(item)) continue;
+		const { name, browser_download_url: url, digest } = item;
+		if (typeof name !== "string" || typeof url !== "string" || !ASSET_PATTERN.test(name)) continue;
+		return {
+			ok: true,
+			tag: typeof release.tag_name === "string" ? release.tag_name : "",
+			asset: {
+				name,
+				url,
+				digest: typeof digest === "string" ? digest : void 0
+			}
+		};
+	}
+	return {
+		ok: false,
+		reason: "no-asset"
+	};
+}
+/** "sha256:<64 hex>" -> lowercase hex, or null when missing or not a SHA-256 digest. */
+function parseDigest(digest) {
+	return /^sha256:([0-9a-fA-F]{64})$/.exec(digest ?? "")?.[1]?.toLowerCase() ?? null;
+}
+function verifyDigest(bytes, digest) {
+	const expected = parseDigest(digest);
+	if (expected === null) return "not-provided";
+	return createHash("sha256").update(bytes).digest("hex") === expected ? "ok" : "mismatch";
+}
+/** A zip entry name that stays inside the target folder: relative, no "..", no drive letter or backslash tricks. */
+function isSafeEntryPath(path) {
+	if (path.length === 0 || path.includes("\0")) return false;
+	if (path.startsWith("/") || path.startsWith("\\") || /^[a-zA-Z]:/.test(path)) return false;
+	return !path.split(/[\\/]/).some((part) => part === "..");
+}
+/** Checks the zip's table of contents before anything is written to disk. */
+function checkEntries(entries) {
+	if (entries.length === 0) return {
+		ok: false,
+		message: "The downloaded zip is empty."
+	};
+	if (entries.length > 5e3) return {
+		ok: false,
+		message: "The downloaded zip has too many files."
+	};
+	const unsafe = entries.find((entry) => !isSafeEntryPath(entry.name));
+	if (unsafe) return {
+		ok: false,
+		message: `The downloaded zip has an unsafe file path ("${unsafe.name}"), so it was not unpacked.`
+	};
+	if (entries.reduce((sum, entry) => sum + entry.size, 0) > 209715200) return {
+		ok: false,
+		message: "The downloaded zip would unpack to an unreasonable size."
+	};
+	if (!entries.some((entry) => entry.name === "manifest.json")) return {
+		ok: false,
+		message: "The downloaded zip has no manifest.json at its top level, so it is not a Phone Sim extension folder."
+	};
+	return { ok: true };
+}
+/** Name and version from manifest.json text; null when it is not a valid Phone Sim manifest. */
+function parseManifest(text) {
+	try {
+		const data = JSON.parse(text);
+		if (!isRecord(data) || data.name !== "Phone Sim" || typeof data.version !== "string") return null;
+		return {
+			name: data.name,
+			version: data.version
+		};
+	} catch {
+		return null;
+	}
+}
+function decideTarget(state) {
+	if (!state.exists) return "create";
+	if (state.entries.length === 0) return "fresh-empty";
+	return state.manifestName === "Phone Sim" ? "replace-old-install" : "refuse-foreign";
+}
+function buildSteps(dir) {
+	return [
+		`Open your browser's extensions page: type chrome://extensions in the address bar (Opera: opera://extensions, Edge: edge://extensions, Brave: brave://extensions).`,
+		`Turn on "Developer mode" (the switch in the top-right corner of that page).`,
+		`Click "Load unpacked" and choose this folder: ${dir}`
+	];
+}
+var WHY_MANUAL = "Browsers do not let tools click \"Load unpacked\" for you, so these three clicks are yours.";
+function updateNote() {
+	return `Updating later: run ${RUN} extension again, then click the reload button (the circular arrow) on the Phone Sim card in the extensions page.`;
+}
+function formatInstalled(summary) {
+	const numbered = summary.steps.map((step, index) => `  ${index + 1}. ${step}`).join("\n");
+	return [
+		`Phone Sim extension v${summary.version} is ready in:`,
+		`  ${summary.dir}`,
+		"",
+		"Add it to your browser (about a minute):",
+		numbered,
+		"",
+		WHY_MANUAL,
+		updateNote()
+	].join("\n");
+}
+// node_modules/.pnpm/fflate@0.8.3/node_modules/fflate/esm/index.mjs
+var require = createRequire$1("/");
+var _a;
+try {
+	_a = require("worker_threads"), _a.Worker, _a.isMarkedAsUntransferable;
+} catch (e) {}
+var u8 = Uint8Array;
+var u16 = Uint16Array;
+var i32 = Int32Array;
+var fleb = new u8([
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	1,
+	1,
+	1,
+	1,
+	2,
+	2,
+	2,
+	2,
+	3,
+	3,
+	3,
+	3,
+	4,
+	4,
+	4,
+	4,
+	5,
+	5,
+	5,
+	5,
+	0,
+	0,
+	0,
+	0
+]);
+var fdeb = new u8([
+	0,
+	0,
+	0,
+	0,
+	1,
+	1,
+	2,
+	2,
+	3,
+	3,
+	4,
+	4,
+	5,
+	5,
+	6,
+	6,
+	7,
+	7,
+	8,
+	8,
+	9,
+	9,
+	10,
+	10,
+	11,
+	11,
+	12,
+	12,
+	13,
+	13,
+	0,
+	0
+]);
+var clim = new u8([
+	16,
+	17,
+	18,
+	0,
+	8,
+	7,
+	9,
+	6,
+	10,
+	5,
+	11,
+	4,
+	12,
+	3,
+	13,
+	2,
+	14,
+	1,
+	15
+]);
+var freb = function(eb, start) {
+	var b = new u16(31);
+	for (var i = 0; i < 31; ++i) b[i] = start += 1 << eb[i - 1];
+	var r = new i32(b[30]);
+	for (var i = 1; i < 30; ++i) for (var j = b[i]; j < b[i + 1]; ++j) r[j] = j - b[i] << 5 | i;
+	return {
+		b,
+		r
+	};
+};
+var _a = freb(fleb, 2);
+var fl = _a.b;
+var revfl = _a.r;
+fl[28] = 258, revfl[258] = 28;
+var _b = freb(fdeb, 0);
+var fd = _b.b;
+_b.r;
+var rev = new u16(32768);
+for (var i = 0; i < 32768; ++i) {
+	var x = (i & 43690) >> 1 | (i & 21845) << 1;
+	x = (x & 52428) >> 2 | (x & 13107) << 2;
+	x = (x & 61680) >> 4 | (x & 3855) << 4;
+	rev[i] = ((x & 65280) >> 8 | (x & 255) << 8) >> 1;
+}
+var hMap = (function(cd, mb, r) {
+	var s = cd.length;
+	var i = 0;
+	var l = new u16(mb);
+	for (; i < s; ++i) if (cd[i]) ++l[cd[i] - 1];
+	var le = new u16(mb);
+	for (i = 1; i < mb; ++i) le[i] = le[i - 1] + l[i - 1] << 1;
+	var co;
+	if (r) {
+		co = new u16(1 << mb);
+		var rvb = 15 - mb;
+		for (i = 0; i < s; ++i) if (cd[i]) {
+			var sv = i << 4 | cd[i];
+			var r_1 = mb - cd[i];
+			var v = le[cd[i] - 1]++ << r_1;
+			for (var m = v | (1 << r_1) - 1; v <= m; ++v) co[rev[v] >> rvb] = sv;
+		}
+	} else {
+		co = new u16(s);
+		for (i = 0; i < s; ++i) if (cd[i]) co[i] = rev[le[cd[i] - 1]++] >> 15 - cd[i];
+	}
+	return co;
+});
+var flt = new u8(288);
+for (var i = 0; i < 144; ++i) flt[i] = 8;
+for (var i = 144; i < 256; ++i) flt[i] = 9;
+for (var i = 256; i < 280; ++i) flt[i] = 7;
+for (var i = 280; i < 288; ++i) flt[i] = 8;
+var fdt = new u8(32);
+for (var i = 0; i < 32; ++i) fdt[i] = 5;
+var flrm = /*#__PURE__*/ hMap(flt, 9, 1);
+var fdrm = /*#__PURE__*/ hMap(fdt, 5, 1);
+var max = function(a) {
+	var m = a[0];
+	for (var i = 1; i < a.length; ++i) if (a[i] > m) m = a[i];
+	return m;
+};
+var bits = function(d, p, m) {
+	var o = p / 8 | 0;
+	return (d[o] | d[o + 1] << 8) >> (p & 7) & m;
+};
+var bits16 = function(d, p) {
+	var o = p / 8 | 0;
+	return (d[o] | d[o + 1] << 8 | d[o + 2] << 16) >> (p & 7);
+};
+var shft = function(p) {
+	return (p + 7) / 8 | 0;
+};
+var slc = function(v, s, e) {
+	if (s == null || s < 0) s = 0;
+	if (e == null || e > v.length) e = v.length;
+	return new u8(v.subarray(s, e));
+};
+var ec = [
+	"unexpected EOF",
+	"invalid block type",
+	"invalid length/literal",
+	"invalid distance",
+	"stream finished",
+	"no stream handler",
+	,
+	"no callback",
+	"invalid UTF-8 data",
+	"extra field too long",
+	"date not in range 1980-2099",
+	"filename too long",
+	"stream finishing",
+	"invalid zip data"
+];
+var err = function(ind, msg, nt) {
+	var e = new Error(msg || ec[ind]);
+	e.code = ind;
+	if (Error.captureStackTrace) Error.captureStackTrace(e, err);
+	if (!nt) throw e;
+	return e;
+};
+var inflt = function(dat, st, buf, dict) {
+	var sl = dat.length, dl = dict ? dict.length : 0;
+	if (!sl || st.f && !st.l) return buf || new u8(0);
+	var noBuf = !buf;
+	var resize = noBuf || st.i != 2;
+	var noSt = st.i;
+	if (noBuf) buf = new u8(sl * 3);
+	var cbuf = function(l) {
+		var bl = buf.length;
+		if (l > bl) {
+			var nbuf = new u8(Math.max(bl * 2, l));
+			nbuf.set(buf);
+			buf = nbuf;
+		}
+	};
+	var final = st.f || 0, pos = st.p || 0, bt = st.b || 0, lm = st.l, dm = st.d, lbt = st.m, dbt = st.n;
+	var tbts = sl * 8;
+	do {
+		if (!lm) {
+			final = bits(dat, pos, 1);
+			var type = bits(dat, pos + 1, 3);
+			pos += 3;
+			if (!type) {
+				var s = shft(pos) + 4, l = dat[s - 4] | dat[s - 3] << 8, t = s + l;
+				if (t > sl) {
+					if (noSt) err(0);
+					break;
+				}
+				if (resize) cbuf(bt + l);
+				buf.set(dat.subarray(s, t), bt);
+				st.b = bt += l, st.p = pos = t * 8, st.f = final;
+				continue;
+			} else if (type == 1) lm = flrm, dm = fdrm, lbt = 9, dbt = 5;
+			else if (type == 2) {
+				var hLit = bits(dat, pos, 31) + 257, hcLen = bits(dat, pos + 10, 15) + 4;
+				var tl = hLit + bits(dat, pos + 5, 31) + 1;
+				pos += 14;
+				var ldt = new u8(tl);
+				var clt = new u8(19);
+				for (var i = 0; i < hcLen; ++i) clt[clim[i]] = bits(dat, pos + i * 3, 7);
+				pos += hcLen * 3;
+				var clb = max(clt), clbmsk = (1 << clb) - 1;
+				var clm = hMap(clt, clb, 1);
+				for (var i = 0; i < tl;) {
+					var r = clm[bits(dat, pos, clbmsk)];
+					pos += r & 15;
+					var s = r >> 4;
+					if (s < 16) ldt[i++] = s;
+					else {
+						var c = 0, n = 0;
+						if (s == 16) n = 3 + bits(dat, pos, 3), pos += 2, c = ldt[i - 1];
+						else if (s == 17) n = 3 + bits(dat, pos, 7), pos += 3;
+						else if (s == 18) n = 11 + bits(dat, pos, 127), pos += 7;
+						while (n--) ldt[i++] = c;
+					}
+				}
+				var lt = ldt.subarray(0, hLit), dt = ldt.subarray(hLit);
+				lbt = max(lt);
+				dbt = max(dt);
+				lm = hMap(lt, lbt, 1);
+				dm = hMap(dt, dbt, 1);
+			} else err(1);
+			if (pos > tbts) {
+				if (noSt) err(0);
+				break;
+			}
+		}
+		if (resize) cbuf(bt + 131072);
+		var lms = (1 << lbt) - 1, dms = (1 << dbt) - 1;
+		var lpos = pos;
+		for (;; lpos = pos) {
+			var c = lm[bits16(dat, pos) & lms], sym = c >> 4;
+			pos += c & 15;
+			if (pos > tbts) {
+				if (noSt) err(0);
+				break;
+			}
+			if (!c) err(2);
+			if (sym < 256) buf[bt++] = sym;
+			else if (sym == 256) {
+				lpos = pos, lm = null;
+				break;
+			} else {
+				var add = sym - 254;
+				if (sym > 264) {
+					var i = sym - 257, b = fleb[i];
+					add = bits(dat, pos, (1 << b) - 1) + fl[i];
+					pos += b;
+				}
+				var d = dm[bits16(dat, pos) & dms], dsym = d >> 4;
+				if (!d) err(3);
+				pos += d & 15;
+				var dt = fd[dsym];
+				if (dsym > 3) {
+					var b = fdeb[dsym];
+					dt += bits16(dat, pos) & (1 << b) - 1, pos += b;
+				}
+				if (pos > tbts) {
+					if (noSt) err(0);
+					break;
+				}
+				if (resize) cbuf(bt + 131072);
+				var end = bt + add;
+				if (bt < dt) {
+					var shift = dl - dt, dend = Math.min(dt, end);
+					if (shift + bt < 0) err(3);
+					for (; bt < dend; ++bt) buf[bt] = dict[shift + bt];
+				}
+				for (; bt < end; ++bt) buf[bt] = buf[bt - dt];
+			}
+		}
+		st.l = lm, st.p = lpos, st.b = bt, st.f = final;
+		if (lm) final = 1, st.m = lbt, st.d = dm, st.n = dbt;
+	} while (!final);
+	return bt != buf.length && noBuf ? slc(buf, 0, bt) : buf.subarray(0, bt);
+};
+var et = /*#__PURE__*/ new u8(0);
+var b2 = function(d, b) {
+	return d[b] | d[b + 1] << 8;
+};
+var b4 = function(d, b) {
+	return (d[b] | d[b + 1] << 8 | d[b + 2] << 16 | d[b + 3] << 24) >>> 0;
+};
+var b8 = function(d, b) {
+	return b4(d, b) + b4(d, b + 4) * 4294967296;
+};
+function inflateSync(data, opts) {
+	return inflt(data, { i: 2 }, opts && opts.out, opts && opts.dictionary);
+}
+var td = typeof TextDecoder != "undefined" && /*#__PURE__*/ new TextDecoder();
+try {
+	td.decode(et, { stream: true });
+} catch (e) {}
+var dutf8 = function(d) {
+	for (var r = "", i = 0;;) {
+		var c = d[i++];
+		var eb = (c > 127) + (c > 223) + (c > 239);
+		if (i + eb > d.length) return {
+			s: r,
+			r: slc(d, i - 1)
+		};
+		if (!eb) r += String.fromCharCode(c);
+		else if (eb == 3) c = ((c & 15) << 18 | (d[i++] & 63) << 12 | (d[i++] & 63) << 6 | d[i++] & 63) - 65536, r += String.fromCharCode(55296 | c >> 10, 56320 | c & 1023);
+		else if (eb & 1) r += String.fromCharCode((c & 31) << 6 | d[i++] & 63);
+		else r += String.fromCharCode((c & 15) << 12 | (d[i++] & 63) << 6 | d[i++] & 63);
+	}
+};
+/**
+* Converts a Uint8Array to a string
+* @param dat The data to decode to string
+* @param latin1 Whether or not to interpret the data as Latin-1. This should
+*               not need to be true unless encoding to binary string.
+* @returns The original UTF-8/Latin-1 string
+*/
+function strFromU8(dat, latin1) {
+	if (latin1) {
+		var r = "";
+		for (var i = 0; i < dat.length; i += 16384) r += String.fromCharCode.apply(null, dat.subarray(i, i + 16384));
+		return r;
+	} else if (td) return td.decode(dat);
+	else {
+		var _a = dutf8(dat), s = _a.s, r = _a.r;
+		if (r.length) err(8);
+		return s;
+	}
+}
+var slzh = function(d, b) {
+	return b + 30 + b2(d, b + 26) + b2(d, b + 28);
+};
+var zh = function(d, b, z) {
+	var fnl = b2(d, b + 28), efl = b2(d, b + 30), fn = strFromU8(d.subarray(b + 46, b + 46 + fnl), !(b2(d, b + 8) & 2048)), es = b + 46 + fnl;
+	var _a = z64hs(d, es, efl, z, b4(d, b + 20), b4(d, b + 24), b4(d, b + 42)), sc = _a[0], su = _a[1], off = _a[2];
+	return [
+		b2(d, b + 10),
+		sc,
+		su,
+		fn,
+		es + efl + b2(d, b + 32),
+		off
+	];
+};
+var z64hs = function(d, b, l, z, sc, su, off) {
+	var nsc = sc == 4294967295, nsu = su == 4294967295, noff = off == 4294967295, e = b + l;
+	var nf = nsc + nsu + noff;
+	if (z && nf) {
+		for (; b + 4 < e; b += 4 + b2(d, b + 2)) if (b2(d, b) == 1) return [
+			nsc ? b8(d, b + 4 + 8 * nsu) : sc,
+			nsu ? b8(d, b + 4) : su,
+			noff ? b8(d, b + 4 + 8 * (nsu + nsc)) : off,
+			1
+		];
+		if (z < 2) err(13);
+	}
+	return [
+		sc,
+		su,
+		off,
+		0
+	];
+};
+/**
+* Synchronously decompresses a ZIP archive. Prefer using `unzip` for better
+* performance with more than one file.
+* @param data The raw compressed ZIP file
+* @param opts The ZIP extraction options
+* @returns The decompressed files
+*/
+function unzipSync(data, opts) {
+	var files = {};
+	var e = data.length - 22;
+	for (; b4(data, e) != 101010256; --e) if (!e || data.length - e > 65558) err(13);
+	var c = b2(data, e + 8);
+	if (!c) return {};
+	var o = b4(data, e + 16);
+	var z = b4(data, e - 20) == 117853008;
+	if (z) {
+		var ze = b4(data, e - 12);
+		z = b4(data, ze) == 101075792;
+		if (z) {
+			c = b4(data, ze + 32);
+			o = b4(data, ze + 48);
+		}
+	}
+	var fltr = opts && opts.filter;
+	for (var i = 0; i < c; ++i) {
+		var _a = zh(data, o, z), c_2 = _a[0], sc = _a[1], su = _a[2], fn = _a[3], no = _a[4], off = _a[5], b = slzh(data, off);
+		o = no;
+		if (!fltr || fltr({
+			name: fn,
+			size: sc,
+			originalSize: su,
+			compression: c_2
+		})) {
+			if (!c_2) files[fn] = slc(data, b, b + sc);
+			else if (c_2 == 8) files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
+			else err(14, "unknown compression type " + c_2);
+		}
+	}
+	return files;
+}
+// src/cli/extensionSystem.ts
+/** Network and disk side effects of `phone-sim extension`. */
+var retry = `Check your internet connection, then run ${RUN} extension again. Or download the zip yourself: ${RELEASES_PAGE}`;
+function releaseApiUrl() {
+	return process.env.PHONE_SIM_RELEASE_API || "https://api.github.com/repos/Abmichael01/phone-sim/releases/latest";
+}
+async function fetchLatestAsset() {
+	let response;
+	try {
+		response = await fetch(releaseApiUrl(), {
+			headers: {
+				"User-Agent": "phone-sim-cli",
+				Accept: "application/vnd.github+json"
+			},
+			signal: AbortSignal.timeout(2e4)
+		});
+	} catch (error) {
+		throw new CheckError("Could not reach GitHub to find the latest Phone Sim extension.", retry, String(error));
+	}
+	if (response.status === 404) throw new CheckError("There is no Phone Sim extension release yet.", `Build it from source instead (see the README), or check ${RELEASES_PAGE} later.`);
+	if (response.status === 403 || response.status === 429) throw new CheckError("GitHub is limiting requests from this network right now.", `Wait a few minutes and run ${RUN} extension again, or download the zip in your browser: ${RELEASES_PAGE}`);
+	if (!response.ok) throw new CheckError(`GitHub answered with an error (${response.status}).`, retry);
+	let json;
+	try {
+		json = await response.json();
+	} catch {
+		throw new CheckError("GitHub sent an answer that could not be read.", retry);
+	}
+	const picked = pickAsset(json);
+	if (!picked.ok) throw new CheckError(picked.reason === "no-asset" ? "The latest release has no extension zip attached." : "GitHub sent an unexpected answer.", `Download or build it another way: ${RELEASES_PAGE}`);
+	return picked.asset;
+}
+async function downloadAsset(asset) {
+	const tooBig = new CheckError("The extension download is bigger than expected, so it was stopped.", `Download the zip in your browser instead: ${RELEASES_PAGE}`);
+	try {
+		const response = await fetch(asset.url, {
+			headers: { "User-Agent": "phone-sim-cli" },
+			signal: AbortSignal.timeout(12e4)
+		});
+		if (!response.ok || !response.body) throw new CheckError(`The extension download failed (${response.status}).`, retry);
+		if (Number(response.headers.get("content-length") ?? 0) > 52428800) throw tooBig;
+		const chunks = [];
+		let total = 0;
+		for await (const chunk of response.body) {
+			total += chunk.length;
+			if (total > 52428800) throw tooBig;
+			chunks.push(chunk);
+		}
+		return Buffer.concat(chunks);
+	} catch (error) {
+		if (error instanceof CheckError) throw error;
+		throw new CheckError("The extension download was interrupted.", retry, String(error));
+	}
+}
+function verifyDownload(bytes, asset) {
+	if (verifyDigest(bytes, asset.digest) === "mismatch") throw new CheckError("The downloaded file does not match GitHub's checksum, so it was not installed.", `Run ${RUN} extension again. If it keeps failing, download the zip in your browser: ${RELEASES_PAGE}`);
+}
+/** Reads what is in the target folder, without changing anything. */
+function readTargetState(dir) {
+	if (!existsSync(dir)) return {
+		exists: false,
+		entries: [],
+		manifestName: void 0
+	};
+	let entries;
+	try {
+		entries = readdirSync(dir);
+	} catch {
+		return {
+			exists: true,
+			entries: ["?"],
+			manifestName: void 0
+		};
+	}
+	let manifestName;
+	try {
+		manifestName = parseManifest(readFileSync(join(dir, "manifest.json"), "utf8"))?.name;
+	} catch {
+		manifestName = void 0;
+	}
+	return {
+		exists: true,
+		entries,
+		manifestName
+	};
+}
+function assertTargetUsable(dir) {
+	if (decideTarget(readTargetState(dir)) === "refuse-foreign") throw new CheckError(`The folder ${dir} already exists and is not a Phone Sim install, so it was left alone.`, `Pick another folder: ${RUN} extension --dir <path>`);
+}
+/** Unzips into a temp folder next to `dir`, then swaps it in, so a failure never leaves a half-installed folder. */
+function installZip(bytes, dir) {
+	const table = [];
+	try {
+		unzipSync(bytes, { filter: (file) => {
+			table.push({
+				name: file.name,
+				size: file.originalSize
+			});
+			return false;
+		} });
+	} catch (error) {
+		throw new CheckError("The downloaded file is not a valid zip.", `Run ${RUN} extension again.`, String(error));
+	}
+	const checked = checkEntries(table);
+	if (!checked.ok) throw new CheckError(checked.message, `Download the zip in your browser instead: ${RELEASES_PAGE}`);
+	const files = unzipSync(bytes);
+	const manifestBytes = files["manifest.json"];
+	const manifest = manifestBytes ? parseManifest(Buffer.from(manifestBytes).toString("utf8")) : null;
+	if (!manifest) throw new CheckError(`The downloaded zip's manifest.json is not a "${EXTENSION_NAME}" extension.`, `Download the zip in your browser instead: ${RELEASES_PAGE}`);
+	const target = resolve(dir);
+	const temp = `${target}.tmp-${process.pid}`;
+	const old = `${target}.old-${process.pid}`;
+	rmSync(temp, {
+		recursive: true,
+		force: true
+	});
+	try {
+		mkdirSync(temp, { recursive: true });
+		for (const [name, data] of Object.entries(files)) {
+			if (name.endsWith("/")) continue;
+			const destination = resolve(temp, name);
+			if (!destination.startsWith(temp + sep)) throw new CheckError("The downloaded zip has an unsafe file path.", `Download the zip in your browser instead: ${RELEASES_PAGE}`);
+			mkdirSync(dirname(destination), { recursive: true });
+			writeFileSync(destination, data);
+		}
+		const hadOld = existsSync(target);
+		if (hadOld) renameSync(target, old);
+		try {
+			mkdirSync(dirname(target), { recursive: true });
+			renameSync(temp, target);
+		} catch (error) {
+			if (hadOld) renameSync(old, target);
+			throw error;
+		}
+		rmSync(old, {
+			recursive: true,
+			force: true
+		});
+	} catch (error) {
+		rmSync(temp, {
+			recursive: true,
+			force: true
+		});
+		if (error instanceof CheckError) throw error;
+		throw new CheckError(`Could not write the extension to ${target}.`, `Pick another folder: ${RUN} extension --dir <path>`, String(error));
+	}
+	return manifest.version;
+}
 // src/cli/target.ts
 /** Common local dev server ports, tried in this order when no URL is given. */
 var DEV_PORTS = [
@@ -12742,6 +13495,24 @@ function init(options) {
 	}
 	return 0;
 }
+async function installExtension(options) {
+	const dir = resolve(process.cwd(), options.dir ?? join(homedir(), "phone-sim-extension"));
+	assertTargetUsable(dir);
+	stderr("Finding the latest Phone Sim extension…");
+	const asset = await fetchLatestAsset();
+	stderr(`Downloading ${asset.name}…`);
+	const bytes = await downloadAsset(asset);
+	verifyDownload(bytes, asset);
+	const summary = {
+		version: installZip(bytes, dir),
+		dir,
+		steps: buildSteps(dir)
+	};
+	if (options.json) process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+	else process.stdout.write(`\n${formatInstalled(summary)}\n`);
+	if (options.open) openWithSystem(dir);
+	return 0;
+}
 async function main(argv) {
 	const parsed = parseCli(argv);
 	if (!parsed.ok) return fail(new CheckError(parsed.message, `${RUN} --help`), parsed.debug);
@@ -12757,6 +13528,7 @@ async function main(argv) {
 				return 0;
 			case "devices": return listDevices(value.options);
 			case "init": return init(value.options);
+			case "extension": return await installExtension(value.options);
 			case "check": return await check(value.options);
 		}
 	} catch (error) {
