@@ -68,12 +68,20 @@ export interface InitOptions {
   debug: boolean;
 }
 
+export interface ExtensionOptions {
+  dir: string | undefined;
+  json: boolean;
+  open: boolean;
+  debug: boolean;
+}
+
 export type Command =
   | { command: "help" }
   | { command: "version" }
   | { command: "check"; options: CheckOptions }
   | { command: "devices"; options: DevicesOptions }
-  | { command: "init"; options: InitOptions };
+  | { command: "init"; options: InitOptions }
+  | { command: "extension"; options: ExtensionOptions };
 
 export type ParseResult = { ok: true; value: Command } | { ok: false; message: string; debug: boolean };
 
@@ -103,6 +111,14 @@ const DEVICES_OPTIONS = {
 
 const INIT_OPTIONS = {
   "dry-run": { type: "boolean", default: false },
+  debug: { type: "boolean", default: false },
+  help: { type: "boolean", short: "h", default: false },
+} as const;
+
+const EXTENSION_OPTIONS = {
+  dir: { type: "string" },
+  json: { type: "boolean", default: false },
+  open: { type: "boolean", default: false },
   debug: { type: "boolean", default: false },
   help: { type: "boolean", short: "h", default: false },
 } as const;
@@ -143,6 +159,13 @@ export function parseCli(argv: readonly string[]): ParseResult {
       const { values } = parseArgs({ args: [...rest], options: INIT_OPTIONS, allowPositionals: false, strict: true });
       if (values.help) return { ok: true, value: { command: "help" } };
       return { ok: true, value: { command: "init", options: { dryRun: values["dry-run"], debug: values.debug } } };
+    }
+
+    if (first === "extension") {
+      const { values } = parseArgs({ args: [...rest], options: EXTENSION_OPTIONS, allowPositionals: false, strict: true });
+      if (values.help) return { ok: true, value: { command: "help" } };
+      if (values.dir !== undefined && values.dir.trim() === "") return { ok: false, message: "--dir needs a folder path.", debug };
+      return { ok: true, value: { command: "extension", options: { dir: values.dir, json: values.json, open: values.open, debug: values.debug } } };
     }
 
     let checkArgs: string[];
@@ -187,6 +210,8 @@ export const HELP_TEXT = `phone-sim: check a web page on real phone and tablet s
       check a URL, a port (3000) or an .html file
   ${RUN} init
       tell AI agents in this repo to run the check
+  ${RUN} extension
+      download and unpack the browser extension (no build needed)
 
 Check options
   --preset <name>       common (default), phones or all-sizes
@@ -207,5 +232,8 @@ Check options
 Other commands
   phone-sim devices [--search <text>] [--json]   list device ids
   phone-sim init [--dry-run]                     add the check to AGENTS.md
+  phone-sim extension [--dir <path>] [--json] [--open]
+      get the latest browser extension into ~/phone-sim-extension (or --dir),
+      then print the 3 clicks to load it. --json prints {version, dir, steps}.
 
 Exit codes: 0 no problems, 1 problems found, 2 could not run the check.`;

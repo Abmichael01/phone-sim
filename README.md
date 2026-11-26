@@ -10,6 +10,31 @@ Phone Sim has two parts:
 - **A browser extension** (Opera GX, Chrome, Edge, Brave) that shows any site inside realistic
   phone, tablet and foldable frames, with screenshots and screen recording.
 
+## Install the extension (no coding)
+
+Phone Sim is not on the Chrome Web Store yet, so you add it by hand. It takes about a minute and
+needs no coding or building.
+
+1. Download `phone-sim-extension-vX.zip` (X is the version number) from the
+   [latest Release](https://github.com/Abmichael01/phone-sim/releases/latest) and unzip it. You get
+   a folder with a `manifest.json` file inside.
+2. Open your browser's extensions page: `chrome://extensions` (Opera: `opera://extensions`, Edge:
+   `edge://extensions`, Brave: `brave://extensions`) and turn on **Developer mode**.
+3. Click **Load unpacked** and choose the unzipped folder.
+
+To update later, download the new zip, replace the folder's contents, then click the reload button
+(the circular arrow) on Phone Sim in the extensions page.
+
+Or let your AI agent do it (it downloads and unpacks the extension, then tells you the clicks):
+
+```sh
+npx -y github:Abmichael01/phone-sim extension
+```
+
+Browsers do not let tools click "Load unpacked" for you, so those last clicks are always yours.
+The folder goes to `~/phone-sim-extension` unless you pass `--dir <path>`; run the same command
+again to update.
+
 ## Quick start: give your AI agent the skill
 
 ```sh
@@ -72,7 +97,7 @@ npx -y github:Abmichael01/phone-sim init
   focus it at full Fit size; reorder devices left/right in the stage drawer; clicking or scrolling
   inside any iframe automatically focuses that device.
 
-## Install (load unpacked)
+## Build from source (developers)
 
 ```sh
 pnpm install

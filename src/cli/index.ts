@@ -4,12 +4,14 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { devices, formatScreen, sortNewestFirst } from "@/devices";
 import { version } from "../../package.json";
-import { HELP_TEXT, parseCli, type CheckOptions, type DevicesOptions, type InitOptions } from "./args";
+import { HELP_TEXT, parseCli, type CheckOptions, type DevicesOptions, type ExtensionOptions, type InitOptions } from "./args";
 import { selectDevices } from "./devicesSelect";
 import { exitCodeFor, JSON_CAP, NO_CAP, summarize, VIEWPORT_NOTE, type Report } from "./issues";
 import { runInit } from "./init";
 import { formatHuman, pickStyle } from "./report";
 import { CheckError, runCheck, writeReportFiles } from "./run";
+import { buildSteps, formatInstalled, type InstallSummary } from "./extension";
+import { assertTargetUsable, downloadAsset, fetchLatestAsset, installZip, verifyDownload } from "./extensionSystem";
 import { httpProbe, openWithSystem } from "./system";
 import { DEV_PORTS, findDevServer, normalizeTarget } from "./target";
 import { RUN } from "./command";
@@ -137,6 +139,22 @@ function init(options: InitOptions): number {
   return 0;
 }
 
+async function installExtension(options: ExtensionOptions): Promise<number> {
+  const dir = resolve(process.cwd(), options.dir ?? join(homedir(), "phone-sim-extension"));
+  assertTargetUsable(dir);
+  stderr("Finding the latest Phone Sim extension…");
+  const asset = await fetchLatestAsset();
+  stderr(`Downloading ${asset.name}…`);
+  const bytes = await downloadAsset(asset);
+  verifyDownload(bytes, asset);
+  const version = installZip(bytes, dir);
+  const summary: InstallSummary = { version, dir, steps: buildSteps(dir) };
+  if (options.json) process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+  else process.stdout.write(`\n${formatInstalled(summary)}\n`);
+  if (options.open) openWithSystem(dir);
+  return 0;
+}
+
 async function main(argv: readonly string[]): Promise<number> {
   const parsed = parseCli(argv);
   if (!parsed.ok) {
@@ -156,6 +174,8 @@ async function main(argv: readonly string[]): Promise<number> {
         return listDevices(value.options);
       case "init":
         return init(value.options);
+      case "extension":
+        return await installExtension(value.options);
       case "check":
         return await check(value.options);
     }
